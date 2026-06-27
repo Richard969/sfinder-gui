@@ -193,15 +193,14 @@ function combineFumens(items: { fumen: string; coverage: number }[], totalPatter
       const pct = (item.coverage / totalPatterns * 100).toFixed(2);
       const comment = `Covered patterns(${item.coverage}/${totalPatterns}) (${pct}%)`;
       const pages = decoder.decode(item.fumen.startsWith('v115@') ? item.fumen : `v115@${item.fumen}`);
-      // Reconstruct final field: apply all operations + clear lines
-      const field = pages[0].field.copy();
-      for (let i = 1; i < pages.length; i++) {
-        const op = pages[i - 1].operation;
-        if (op) {
-          try { field.fill(op); field.clearLine(); } catch {/* skip */}
-        }
+      // Take page with max blocks (peak before line clears)
+      let bestPage = pages[0];
+      let maxBlocks = 0;
+      for (const page of pages) {
+        const cnt = page.field.str().replace(/_/g, '').length;
+        if (cnt > maxBlocks) { maxBlocks = cnt; bestPage = page; }
       }
-      allPages.push({ field, comment });
+      allPages.push({ field: bestPage.field, comment });
     }
     if (allPages.length === 0) return null;
     return encoder.encode(allPages);
