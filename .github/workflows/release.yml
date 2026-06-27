@@ -91,7 +91,8 @@ jobs:
             sfinder-gui-portable-windows.zip
             sfinder-gui-portable-linux.tar.gz
             sfinder-gui-portable-macos.tar.gz
-          generate_release_notes: true
+          body: |
+            See [commits](https://github.com/Richard969/sfinder-gui/commits/master) for changes.
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
