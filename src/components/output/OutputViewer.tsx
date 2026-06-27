@@ -194,42 +194,38 @@ function combineFumens(items: { fumen: string; coverage: number }[], totalPatter
       const comment = `Covered patterns(${item.coverage}/${totalPatterns}) (${pct}%)`;
       const pages = decoder.decode(item.fumen.startsWith('v115@') ? item.fumen : `v115@${item.fumen}`);
       // Reconstruct peak field: undo line clears backwards
-      // For each step: detect cleared rows, insert their CONTENT (from prev page), shift above rows up
       const field = pages[pages.length - 1].field.copy();
 
       for (let pi = pages.length - 1; pi >= 1; pi--) {
         const prevPage = pages[pi - 1];
         const currPage = pages[pi];
-        const prevBlocks = prevPage.field.str().replace(/_/g, '').length;
-        const currBlocks = currPage.field.str().replace(/_/g, '').length;
 
-        // Lines cleared in this step
-        const clearedCount = Math.max(0, (prevBlocks - currBlocks) / 10) | 0;
-        if (clearedCount === 0) continue;
-
-        // Find which rows were full in previous page (these were cleared)
-        const fullRows: number[] = [];
+        // Build sets of full row strings for comparison
+        const prevFullRows: { y: number; content: string }[] = [];
+        const currRowStrings = new Set<string>();
         for (let y = 0; y <= 22; y++) {
           const row = Array.from({ length: 10 }, (_, x) => prevPage.field.at(x, y)).join('');
           if (row.replace(/_/g, '').length === 10) {
-            fullRows.push(y);
+            prevFullRows.push({ y, content: row });
           }
+          const crow = Array.from({ length: 10 }, (_, x) => currPage.field.at(x, y)).join('');
+          currRowStrings.add(crow);
         }
-        fullRows.sort((a, b) => a - b);
-        const cleared = fullRows.slice(0, clearedCount);
 
-        // Insert cleared rows with their original content, bottom-to-top
-        cleared.sort((a, b) => a - b);
-        for (const clearY of cleared) {
+        // Cleared rows are full rows in prev whose content is NOT in curr
+        const cleared = prevFullRows.filter((r) => !currRowStrings.has(r.content));
+        cleared.sort((a, b) => a.y - b.y); // bottom-to-top
+
+        for (const { y: clearY, content } of cleared) {
           // Shift everything at clearY and above UP by 1
           for (let y = 22; y > clearY; y--) {
             for (let x = 0; x < 10; x++) {
               field.set(x, y, field.at(x, y - 1));
             }
           }
-          // Insert the ORIGINAL cleared row content from the previous page
+          // Insert the cleared row's original content
           for (let x = 0; x < 10; x++) {
-            field.set(x, clearY, prevPage.field.at(x, clearY));
+            field.set(x, clearY, content[x] as any);
           }
         }
       }
