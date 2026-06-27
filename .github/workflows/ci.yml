@@ -50,6 +50,7 @@ jobs:
       - run: npm ci
 
       - name: Build Tauri
+        shell: bash
         run: |
           if [ -n "${{ matrix.target }}" ]; then
             npx tauri build --target ${{ matrix.target }}
