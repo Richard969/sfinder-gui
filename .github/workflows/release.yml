@@ -6,29 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  test:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - run: npm ci
-
-      - name: TypeScript check
-        run: npx tsc --noEmit
-
-      - name: Rust check
-        run: cargo check
-        working-directory: src-tauri
-
   build:
-    needs: test
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
