@@ -67,22 +67,33 @@ jobs:
             echo "BUNDLE_DIR=src-tauri/target/release/bundle" >> $GITHUB_ENV
           fi
 
+      - name: Set binary path
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.target }}" ]; then
+            echo "BIN_DIR=src-tauri/target/${{ matrix.target }}/release" >> $GITHUB_ENV
+          else
+            echo "BIN_DIR=src-tauri/target/release" >> $GITHUB_ENV
+          fi
+
       - name: Package portable (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path "$env:BUNDLE_DIR/nsis/*" -DestinationPath "sfinder-gui-windows-portable.zip"
+        run: |
+          $files = Get-ChildItem "$env:BIN_DIR" -Exclude "bundle",".cargo-lock","*.d" | Where-Object { -not $_.PSIsContainer }
+          Compress-Archive -Path $files.FullName -DestinationPath "sfinder-gui-windows-portable.zip"
 
       - name: Package portable (Linux)
         if: runner.os == 'Linux'
         run: |
-          cd $BUNDLE_DIR/appimage
-          tar -czf ../../../../sfinder-gui-linux-portable.tar.gz *
+          cp $BUNDLE_DIR/appimage/*.AppImage sfinder-gui-linux-portable.AppImage
+          tar -czf sfinder-gui-linux-portable.tar.gz $BUNDLE_DIR/appimage/*.AppImage
 
       - name: Package portable (macOS)
         if: runner.os == 'macOS'
         run: |
-          cd $BUNDLE_DIR/dmg
-          tar -czf ../../../../sfinder-gui-macos-portable.tar.gz *
+          cd $BUNDLE_DIR/macos
+          tar -czf ../../../../sfinder-gui-macos-portable.tar.gz *.app
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -93,8 +104,7 @@ jobs:
             ${{ env.BUNDLE_DIR }}/nsis/*.exe
             ${{ env.BUNDLE_DIR }}/appimage/*.AppImage
             ${{ env.BUNDLE_DIR }}/dmg/*.dmg
-            ${{ env.BUNDLE_DIR }}/rpm/*.rpm
-            ${{ env.BUNDLE_DIR }}/deb/*.deb
             sfinder-gui-windows-portable.zip
             sfinder-gui-linux-portable.tar.gz
+            sfinder-gui-linux-portable.AppImage
             sfinder-gui-macos-portable.tar.gz
