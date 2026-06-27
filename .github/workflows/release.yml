@@ -73,6 +73,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          # Copy jar into release dir for bundling
+          if (Test-Path "src-tauri/binaries/sfinder.jar") {
+            Copy-Item "src-tauri/binaries/sfinder.jar" "$env:BIN_DIR/"
+          }
           $files = Get-ChildItem "$env:BIN_DIR" -Exclude "bundle",".cargo-lock","*.d" | Where-Object { -not $_.PSIsContainer }
           Compress-Archive -Path $files.FullName -DestinationPath "sfinder-gui-portable-windows.zip"
 

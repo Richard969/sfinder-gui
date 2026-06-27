@@ -166,12 +166,23 @@ fn find_output_files(config: &SfinderCommandConfig) -> Vec<String> {
 }
 
 pub fn get_bundled_jar_path(app: &AppHandle) -> Option<String> {
-    app.path()
-        .resource_dir()
-        .ok()
-        .map(|dir| dir.join("binaries").join("sfinder.jar"))
-        .filter(|p| p.exists())
-        .map(|p| p.to_string_lossy().to_string())
+    // Check resource_dir/binaries/sfinder.jar
+    if let Ok(dir) = app.path().resource_dir() {
+        let path = dir.join("binaries").join("sfinder.jar");
+        if path.exists() {
+            return Some(path.to_string_lossy().to_string());
+        }
+    }
+    // Fallback: check next to the executable (portable)
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            let path = dir.join("sfinder.jar");
+            if path.exists() {
+                return Some(path.to_string_lossy().to_string());
+            }
+        }
+    }
+    None
 }
 
 pub async fn execute_sfinder(
