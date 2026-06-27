@@ -41,10 +41,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": [],
-    "resources": [
-      "binaries/sfinder.jar"
-    ]
+    "externalBin": []
   },
   "plugins": {
     "shell": {
