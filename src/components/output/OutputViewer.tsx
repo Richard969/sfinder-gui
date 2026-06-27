@@ -185,7 +185,7 @@ function parseStdoutCoverage(stdout: string): { pct: string; fraction: string } 
   return null;
 }
 
-/** Combine multiple fumen strings into a single multi-page fumen with coverage comments */
+/** Combine multiple fumen solutions into a single multi-page fumen with coverage comments */
 function combineFumens(items: { fumen: string; coverage: number }[], totalPatterns: number): string | null {
   try {
     const allPages: any[] = [];
@@ -193,10 +193,12 @@ function combineFumens(items: { fumen: string; coverage: number }[], totalPatter
       const pct = (item.coverage / totalPatterns * 100).toFixed(2);
       const comment = `Covered patterns(${item.coverage}/${totalPatterns}) (${pct}%)`;
       const pages = decoder.decode(item.fumen.startsWith('v115@') ? item.fumen : `v115@${item.fumen}`);
-      for (let i = 0; i < pages.length; i++) {
+      // Take only the LAST page (final field state) — ignores split steps
+      const lastPage = pages[pages.length - 1];
+      if (lastPage) {
         allPages.push({
-          field: pages[i].field,
-          comment: i === 0 ? comment : undefined,
+          field: lastPage.field,
+          comment,
         });
       }
     }
