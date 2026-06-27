@@ -174,25 +174,44 @@ function PathSummary({ total, minimal, allFumen, minFumen, onView, t }: { total:
 
 type TabId = 'summary' | 'solutions' | 'stdout' | 'csv' | 'stderr';
 
-function PathCsvSummary({ rows, t }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string }) {
+function factorial(n: number): number {
+  let r = 1; for (let i = 2; i <= n; i++) r *= i; return r;
+}
+function perm(n: number, k: number): number {
+  let r = 1; for (let i = 0; i < k; i++) r *= (n - i); return r;
+}
+function totalQueues(pattern: string): number {
+  const m = pattern.match(/\*p(\d+)/);
+  if (m) return perm(7, parseInt(m[1]));
+  if (/\[\w+\]p7/.test(pattern) || pattern.includes('*p7') || pattern === '*p') return factorial(7);
+  if (/\*p/.test(pattern)) return factorial(7);
+  return 5040; // default fallback
+}
+
+function PathCsvSummary({ rows, t, totalQ }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; totalQ: number }) {
   const totalCoverage = rows.reduce((sum, r) => sum + r.coverage, 0);
+  const maxCoverage = rows.length > 0 ? rows[0].coverage : 0;
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="rounded border border-border bg-background p-4 text-center">
           <div className="text-3xl font-bold text-primary">{rows.length}</div>
           <div className="text-[11px] text-muted-foreground mt-1">Unique Solutions</div>
         </div>
         <div className="rounded border border-border bg-background p-4 text-center">
-          <div className="text-3xl font-bold text-primary">{totalCoverage}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">Total Coverage</div>
+          <div className="text-3xl font-bold text-primary">{maxCoverage}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Max Coverage</div>
+        </div>
+        <div className="rounded border border-border bg-background p-4 text-center">
+          <div className="text-3xl font-bold text-primary">{(maxCoverage / totalQ * 100).toFixed(1)}%</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Max %</div>
         </div>
       </div>
     </div>
   );
 }
 
-function PathCsvTable({ rows, onView, t }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; onView: (f: string) => void }) {
+function PathCsvTable({ rows, onView, t, totalQ }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; onView: (f: string) => void; totalQ: number }) {
   const [filter, setFilter] = useState('');
   const filtered = useMemo(
     () => filter ? rows.filter((r) => r.used.toUpperCase().includes(filter.toUpperCase())) : rows,
@@ -221,6 +240,7 @@ function PathCsvTable({ rows, onView, t }: { rows: { fumen: string; coverage: nu
               <tr key={i} className="hover:bg-secondary/30">
                 <td className="px-2 py-1 text-right">
                   <span className="text-green-400 font-bold">{row.coverage}</span>
+                  <span className="text-muted-foreground ml-1">({(row.coverage / totalQ * 100).toFixed(1)}%)</span>
                 </td>
                 <td className="px-2 py-1 font-mono text-muted-foreground">{row.used || '-'}</td>
                 <td className="px-2 py-1 text-center">
@@ -263,6 +283,11 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
   const pathRows = useMemo(() => {
     return (output.pathResults || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.pathResults]);
+
+  const pathTotalQ = useMemo(() => {
+    const pat = output.commandLine.match(/--patterns\s+(\S+)/)?.[1] || '*p7';
+    return totalQueues(pat);
+  }, [output.commandLine]);
 
   const handleView = (fumen: string) => {
     try {
@@ -384,13 +409,13 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
           <PercentDisplay stdout={output.stdout} />
         )}
         {!failed && activeTab === 'summary' && command === 'path' && (
-          <PathCsvSummary rows={pathRows} t={t} />
+          <PathCsvSummary rows={pathRows} t={t} totalQ={pathTotalQ} />
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
         )}
         {!failed && activeTab === 'solutions' && command === 'path' && (
-          <PathCsvTable rows={pathRows} onView={handleView} t={t} />
+          <PathCsvTable rows={pathRows} onView={handleView} t={t} totalQ={pathTotalQ} />
         )}
         {!failed && activeTab === 'solutions' && command !== 'path' && (
           <SolutionTable solutions={[...unique, ...minimal]} label="all" />
