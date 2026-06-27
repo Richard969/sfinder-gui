@@ -32,7 +32,9 @@ export default function ViewFumenPage() {
   const t = useT();
   const total = pages.length;
   const currentPage = pages[currentPageIndex];
-  const operation = currentPage?.operation;
+  // Show the operation that produced the current field (from the previous page)
+  const prevPage = currentPageIndex > 0 ? pages[currentPageIndex - 1] : null;
+  const operation = prevPage?.operation;
   const comment = currentPage?.comment;
   const isAllSolutions = total > 5;
 
