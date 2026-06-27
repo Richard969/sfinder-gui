@@ -206,8 +206,8 @@ function combineFumens(items: { fumen: string; coverage: number }[], totalPatter
       const field = pages[0].field.copy();
       const clearedRows: { y: number; content: string }[] = [];
 
-      for (let pi = 1; pi < pages.length; pi++) {
-        const op = pages[pi - 1].operation;
+      for (let pi = 0; pi < pages.length; pi++) {
+        const op = pages[pi].operation;
         if (!op) continue;
         try { field.fill(op); } catch { continue; }
 
