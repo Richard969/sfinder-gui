@@ -209,7 +209,7 @@ function PathCsvSummary({ rows, t, stdout }: { rows: { fumen: string; coverage: 
   );
 }
 
-function PathCsvTable({ rows, onView, t }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; onView: (f: string) => void }) {
+function PathCsvTable({ rows, onView, t, totalPatterns }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; onView: (f: string) => void; totalPatterns: number }) {
   const [filter, setFilter] = useState('');
   const filtered = useMemo(
     () => filter ? rows.filter((r) => r.used.toUpperCase().includes(filter.toUpperCase())) : rows,
@@ -228,7 +228,7 @@ function PathCsvTable({ rows, onView, t }: { rows: { fumen: string; coverage: nu
         <table className="w-full text-xs">
           <thead className="bg-secondary/50 sticky top-0">
             <tr>
-              <th className="px-2 py-1.5 text-right font-medium text-muted-foreground w-16">Patterns</th>
+              <th className="px-2 py-1.5 text-right font-medium text-muted-foreground w-20">Coverage</th>
               <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">Used</th>
               <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-16">View</th>
             </tr>
@@ -238,6 +238,9 @@ function PathCsvTable({ rows, onView, t }: { rows: { fumen: string; coverage: nu
               <tr key={i} className="hover:bg-secondary/30">
                 <td className="px-2 py-1 text-right">
                   <span className="text-green-400 font-bold">{row.coverage}</span>
+                  <span className="text-muted-foreground text-[10px] ml-0.5">
+                    ({(row.coverage / totalPatterns * 100).toFixed(1)}%)
+                  </span>
                 </td>
                 <td className="px-2 py-1 font-mono text-muted-foreground">{row.used || '-'}</td>
                 <td className="px-2 py-1 text-center">
@@ -280,6 +283,7 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
   const pathRows = useMemo(() => {
     return (output.pathResults || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.pathResults]);
+  const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
 
   const handleView = (fumen: string) => {
     try {
@@ -407,7 +411,7 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
         )}
         {!failed && activeTab === 'solutions' && command === 'path' && (
-          <PathCsvTable rows={pathRows} onView={handleView} t={t} />
+          <PathCsvTable rows={pathRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
         )}
         {!failed && activeTab === 'solutions' && command !== 'path' && (
           <SolutionTable solutions={[...unique, ...minimal]} label="all" />

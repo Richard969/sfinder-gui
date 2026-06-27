@@ -72,6 +72,9 @@ pub struct SfinderOutput {
     #[serde(rename = "pathResults")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub path_results: Option<Vec<PathResultEntry>>,
+    #[serde(rename = "pathTotalPatterns")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path_total_patterns: Option<u32>,
 }
 
 // --- Commands ---

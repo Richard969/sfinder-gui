@@ -61,6 +61,7 @@ export interface SfinderOutput {
   outputFiles: string[];
   commandLine: string;
   pathResults?: PathResultEntry[];
+  pathTotalPatterns?: number;
 }
 
 // --- Command execution state ---
