@@ -185,14 +185,19 @@ function parseStdoutCoverage(stdout: string): { pct: string; fraction: string } 
   return null;
 }
 
-/** Combine multiple fumen strings into a single multi-page fumen */
-function combineFumens(fumens: string[]): string | null {
+/** Combine multiple fumen strings into a single multi-page fumen with coverage comments */
+function combineFumens(items: { fumen: string; coverage: number }[], totalPatterns: number): string | null {
   try {
     const allPages: any[] = [];
-    for (const fumen of fumens) {
-      const pages = decoder.decode(fumen.startsWith('v115@') ? fumen : `v115@${fumen}`);
-      for (const page of pages) {
-        allPages.push({ field: page.field });
+    for (const item of items) {
+      const pct = (item.coverage / totalPatterns * 100).toFixed(1);
+      const comment = `Coverage: ${pct}%`;
+      const pages = decoder.decode(item.fumen.startsWith('v115@') ? item.fumen : `v115@${item.fumen}`);
+      for (let i = 0; i < pages.length; i++) {
+        allPages.push({
+          field: pages[i].field,
+          comment: i === 0 ? comment : undefined,
+        });
       }
     }
     if (allPages.length === 0) return null;
@@ -202,10 +207,10 @@ function combineFumens(fumens: string[]): string | null {
   }
 }
 
-function PathCsvSummary({ rows, t, stdout, minimalRows, onView }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; stdout: string; minimalRows: { fumen: string; coverage: number; used: string }[]; onView: (f: string) => void }) {
+function PathCsvSummary({ rows, t, stdout, minimalRows, onView, totalPatterns }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; stdout: string; minimalRows: { fumen: string; coverage: number; used: string }[]; onView: (f: string) => void; totalPatterns: number }) {
   const cov = parseStdoutCoverage(stdout);
-  const allCombined = useMemo(() => combineFumens(rows.map((r) => r.fumen)), [rows]);
-  const minimalCombined = useMemo(() => combineFumens(minimalRows.map((r) => r.fumen)), [minimalRows]);
+  const allCombined = useMemo(() => combineFumens(rows.map((r) => ({ fumen: r.fumen, coverage: r.coverage })), totalPatterns), [rows, totalPatterns]);
+  const minimalCombined = useMemo(() => combineFumens(minimalRows.map((r) => ({ fumen: r.fumen, coverage: r.coverage })), totalPatterns), [minimalRows, totalPatterns]);
 
   return (
     <div className="space-y-4">
@@ -440,7 +445,7 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
           <PercentDisplay stdout={output.stdout} />
         )}
         {!failed && activeTab === 'summary' && command === 'path' && (
-          <PathCsvSummary rows={pathRows} t={t} stdout={output.stdout} minimalRows={strictMinimalRows} onView={handleView} />
+          <PathCsvSummary rows={pathRows} t={t} stdout={output.stdout} minimalRows={strictMinimalRows} onView={handleView} totalPatterns={pathTotalPatterns} />
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
