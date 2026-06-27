@@ -263,9 +263,13 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
   }, [output.outputFiles]);
 
   const htmlOutput = Object.values(fileContents).find((c) => c.length > 50) || '';
-  const csvOutput = Object.values(fileContents).find((c) => c.includes(',')) || output.stdout || '';
+  // CSV: prefer .csv file content, fallback to stdout
+  const csvContent = Object.entries(fileContents).find(([path]) => path.endsWith('.csv'))?.[1]
+    || Object.values(fileContents).find((c) => c.includes(','))
+    || output.stdout
+    || '';
   const { unique, minimal, allFumen, minimalFumen } = useMemo(() => parseSolutions(htmlOutput), [htmlOutput]);
-  const csvRows = useMemo(() => command === 'path' ? parsePathCsv(csvOutput) : [], [command, csvOutput]);
+  const csvRows = useMemo(() => command === 'path' ? parsePathCsv(csvContent) : [], [command, csvContent]);
 
   const handleView = (fumen: string) => {
     try {
@@ -399,7 +403,7 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
           <SolutionTable solutions={[...unique, ...minimal]} label="all" />
         )}
         {!failed && activeTab === 'stdout' && <RawOutput text={output.stdout || '(empty)'} />}
-        {!failed && activeTab === 'csv' && <RawOutput text={csvOutput || htmlOutput} />}
+        {!failed && activeTab === 'csv' && <RawOutput text={csvContent || htmlOutput} />}
         {!failed && activeTab === 'stderr' && <RawOutput text={output.stderr || '(empty)'} />}
       </div>
 
