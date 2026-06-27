@@ -184,9 +184,8 @@ function parseStdoutCoverage(stdout: string): { pct: string; fraction: string } 
   return null;
 }
 
-function PathCsvSummary({ rows, t, stdout }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; stdout: string }) {
+function PathCsvSummary({ rows, t, stdout, minimalCount }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; stdout: string; minimalCount: number }) {
   const cov = parseStdoutCoverage(stdout);
-  const maxPatterns = rows.length > 0 ? rows[0].coverage : 0;
   return (
     <div className="space-y-4">
       {cov && (
@@ -201,8 +200,8 @@ function PathCsvSummary({ rows, t, stdout }: { rows: { fumen: string; coverage: 
           <div className="text-[11px] text-muted-foreground mt-1">Unique Solutions</div>
         </div>
         <div className="rounded border border-border bg-background p-4 text-center">
-          <div className="text-3xl font-bold text-primary">{maxPatterns}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">Max Patterns Solved</div>
+          <div className="text-3xl font-bold text-primary">{minimalCount}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Minimal Solutions</div>
         </div>
       </div>
     </div>
@@ -238,7 +237,6 @@ function PathCsvTable({ rows, onView, t, totalPatterns }: { rows: { fumen: strin
               <tr key={i} className="hover:bg-secondary/30">
                 <td className="px-2 py-1 text-right">
                   <span className="text-green-400 font-bold">{(row.coverage / totalPatterns * 100).toFixed(1)}%</span>
-                  <div className="text-muted-foreground text-[10px]">{row.coverage} patterns</div>
                 </td>
                 <td className="px-2 py-1 font-mono text-muted-foreground">{row.used || '-'}</td>
                 <td className="px-2 py-1 text-center">
@@ -407,7 +405,7 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
           <PercentDisplay stdout={output.stdout} />
         )}
         {!failed && activeTab === 'summary' && command === 'path' && (
-          <PathCsvSummary rows={pathRows} t={t} stdout={output.stdout} />
+          <PathCsvSummary rows={pathRows} t={t} stdout={output.stdout} minimalCount={strictMinimalRows.length || pathRows.length} />
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
