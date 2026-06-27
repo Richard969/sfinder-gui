@@ -75,6 +75,9 @@ pub struct SfinderOutput {
     #[serde(rename = "pathTotalPatterns")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub path_total_patterns: Option<u32>,
+    #[serde(rename = "strictMinimal")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strict_minimal: Option<Vec<PathResultEntry>>,
 }
 
 // --- Commands ---

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
@@ -169,6 +169,74 @@ pub fn compute_path_coverage(csv_path: &str) -> (Vec<PathResultEntry>, u32) {
     (results, total_rows)
 }
 
+/// Find minimal set of fumens that cover all patterns (set cover approximation)
+/// Returns the minimal fumen codes as PathResultEntry list with coverage=pattern_count
+pub fn find_strict_minimal(results: &[PathResultEntry], csv_path: &str) -> Vec<PathResultEntry> {
+    // Re-parse CSV to get pattern→fumens mapping
+    let Ok(content) = std::fs::read_to_string(csv_path) else { return vec![] };
+
+    // Group patterns by fumen for lookup
+    let mut pattern_fumens: Vec<HashSet<String>> = vec![];
+    let mut pattern_idx: HashMap<String, Vec<usize>> = HashMap::new(); // fumen → which patterns it covers
+
+    for line in content.lines().skip(1) {
+        let cols: Vec<&str> = line.split(',').collect();
+        if cols.len() < 5 { continue; }
+        let fumen_str = cols[4].trim();
+        if fumen_str.is_empty() { continue; }
+        let fumens: HashSet<String> = fumen_str.split(';').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+        let idx = pattern_fumens.len();
+        for f in &fumens {
+            pattern_idx.entry(f.clone()).or_default().push(idx);
+        }
+        pattern_fumens.push(fumens);
+    }
+
+    if pattern_fumens.is_empty() { return vec![]; }
+
+    // Greedy set cover: pick fumen that covers most uncovered patterns each iteration
+    let mut uncovered: HashSet<usize> = (0..pattern_fumens.len()).collect();
+    let mut selected: Vec<String> = vec![];
+    let mut fumen_map: HashMap<String, PathResultEntry> = HashMap::new();
+
+    // Build fumen map from original results
+    for r in results {
+        fumen_map.entry(r.fumen.clone()).or_insert_with(|| r.clone());
+    }
+
+    while !uncovered.is_empty() {
+        let mut best_fumen = String::new();
+        let mut best_count = 0;
+
+        // Check each fumen's coverage over remaining uncovered patterns
+        for r in results {
+            if selected.contains(&r.fumen) { continue; }
+            let mut count = 0;
+            if let Some(indices) = pattern_idx.get(&r.fumen) {
+                for &idx in indices {
+                    if uncovered.contains(&idx) { count += 1; }
+                }
+            }
+            if count > best_count {
+                best_count = count;
+                best_fumen = r.fumen.clone();
+            }
+        }
+
+        if best_count == 0 { break; }
+
+        selected.push(best_fumen.clone());
+        // Remove covered patterns
+        if let Some(indices) = pattern_idx.get(&best_fumen) {
+            for &idx in indices {
+                uncovered.remove(&idx);
+            }
+        }
+    }
+
+    selected.into_iter().filter_map(|f| fumen_map.remove(&f)).collect()
+}
+
 fn resolve_output_dir(config: &SfinderCommandConfig) -> String {
     config.output_base.as_ref()
         .filter(|p| !p.is_empty())
@@ -283,6 +351,10 @@ pub async fn execute_sfinder(
                 } else {
                     (vec![], 0)
                 };
+                let strict_minimal = if config.command == "path" && !path_results.is_empty() {
+                    let sm = find_strict_minimal(&path_results, "output/path.csv");
+                    if sm.is_empty() { None } else { Some(sm) }
+                } else { None };
                 let path_results = if path_results.is_empty() { None } else { Some(path_results) };
                 let path_total_patterns = if path_total > 0 { Some(path_total) } else { None };
 
@@ -294,6 +366,7 @@ pub async fn execute_sfinder(
                     command_line,
                     path_results,
                     path_total_patterns,
+                    strict_minimal,
                 });
             }
             CommandEvent::Error(err) => {

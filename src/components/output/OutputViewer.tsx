@@ -172,7 +172,7 @@ function PathSummary({ total, minimal, allFumen, minFumen, onView, t }: { total:
   );
 }
 
-type TabId = 'summary' | 'solutions' | 'stdout' | 'csv' | 'stderr';
+type TabId = 'summary' | 'solutions' | 'strict-minimal' | 'stdout' | 'csv' | 'stderr';
 
 function parseStdoutCoverage(stdout: string): { pct: string; fraction: string } | null {
   // Match: success = 100.00% (10080/10080) or similar
@@ -237,10 +237,8 @@ function PathCsvTable({ rows, onView, t, totalPatterns }: { rows: { fumen: strin
             {filtered.map((row, i) => (
               <tr key={i} className="hover:bg-secondary/30">
                 <td className="px-2 py-1 text-right">
-                  <span className="text-green-400 font-bold">{row.coverage}</span>
-                  <span className="text-muted-foreground text-[10px] ml-0.5">
-                    ({(row.coverage / totalPatterns * 100).toFixed(1)}%)
-                  </span>
+                  <span className="text-green-400 font-bold">{(row.coverage / totalPatterns * 100).toFixed(1)}%</span>
+                  <div className="text-muted-foreground text-[10px]">{row.coverage} patterns</div>
                 </td>
                 <td className="px-2 py-1 font-mono text-muted-foreground">{row.used || '-'}</td>
                 <td className="px-2 py-1 text-center">
@@ -283,6 +281,9 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
   const pathRows = useMemo(() => {
     return (output.pathResults || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.pathResults]);
+  const strictMinimalRows = useMemo(() => {
+    return (output.strictMinimal || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
+  }, [output.strictMinimal]);
   const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
 
   const handleView = (fumen: string) => {
@@ -365,6 +366,7 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
   } else if (command === 'path' && pathRows.length > 0) {
     tabs.push({ id: 'summary', label: t('output.summary') });
     tabs.push({ id: 'solutions', label: `${t('output.solutions')} (${pathRows.length})` });
+    if (strictMinimalRows.length > 0) tabs.push({ id: 'strict-minimal', label: `Strict Minimal (${strictMinimalRows.length})` });
     tabs.push({ id: 'csv', label: 'CSV' });
     if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
   } else if (command === 'percent') {
@@ -412,6 +414,9 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
         )}
         {!failed && activeTab === 'solutions' && command === 'path' && (
           <PathCsvTable rows={pathRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
+        )}
+        {!failed && activeTab === 'strict-minimal' && (
+          <PathCsvTable rows={strictMinimalRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
         )}
         {!failed && activeTab === 'solutions' && command !== 'path' && (
           <SolutionTable solutions={[...unique, ...minimal]} label="all" />
