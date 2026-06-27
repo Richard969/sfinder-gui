@@ -11,19 +11,89 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
+        with: { node-version: 22, cache: npm }
       - uses: dtolnay/rust-toolchain@stable
-
       - run: npm ci
-
       - name: TypeScript check
         run: npx tsc --noEmit
-
       - name: Rust check
         run: cargo check
         working-directory: src-tauri
+
+  build:
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev libjavascriptcoregtk-4.1-dev libsoup-3.0-dev
+
+      - run: npm ci
+
+      - name: Build Tauri
+        run: |
+          if [ -n "${{ matrix.target }}" ]; then
+            npx tauri build --target ${{ matrix.target }}
+          else
+            npx tauri build
+          fi
+
+      - name: Set bundle path
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.target }}" ]; then
+            echo "BUNDLE_DIR=src-tauri/target/${{ matrix.target }}/release/bundle" >> $GITHUB_ENV
+          else
+            echo "BUNDLE_DIR=src-tauri/target/release/bundle" >> $GITHUB_ENV
+          fi
+
+      - name: Package portable (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path "$env:BUNDLE_DIR/nsis/*" -DestinationPath "sfinder-gui-windows-portable.zip"
+
+      - name: Package portable (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd $BUNDLE_DIR/appimage
+          tar -czf ../../../../sfinder-gui-linux-portable.tar.gz *
+
+      - name: Package portable (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd $BUNDLE_DIR/dmg
+          tar -czf ../../../../sfinder-gui-macos-portable.tar.gz *
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfinder-gui-${{ matrix.os }}
+          path: |
+            ${{ env.BUNDLE_DIR }}/msi/*.msi
+            ${{ env.BUNDLE_DIR }}/nsis/*.exe
+            ${{ env.BUNDLE_DIR }}/appimage/*.AppImage
+            ${{ env.BUNDLE_DIR }}/dmg/*.dmg
+            ${{ env.BUNDLE_DIR }}/rpm/*.rpm
+            ${{ env.BUNDLE_DIR }}/deb/*.deb
+            sfinder-gui-windows-portable.zip
+            sfinder-gui-linux-portable.tar.gz
+            sfinder-gui-macos-portable.tar.gz
