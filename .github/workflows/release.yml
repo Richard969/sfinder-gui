@@ -88,7 +88,12 @@ jobs:
           if (Test-Path "src-tauri/binaries/sfinder.jar") {
             Copy-Item "src-tauri/binaries/sfinder.jar" "$env:BIN_DIR/"
           }
-          $files = Get-ChildItem "$env:BIN_DIR" -Exclude "bundle",".cargo-lock","*.d","*.pdb","*.lib","*.exp" | Where-Object { -not $_.PSIsContainer }
+          $files = Get-ChildItem "$env:BIN_DIR" -File | Where-Object {
+            $_.Extension -notin ".d",".pdb",".lib",".exp" -and
+            $_.Name -notlike "*.cargo*" -and
+            $_.Name -notlike "*lock*" -and
+            $_.Directory.Name -ne "bundle"
+          }
           Compress-Archive -Path $files.FullName -DestinationPath "sfinder-gui-portable-windows.zip"
 
       - name: Package portable (Linux)
