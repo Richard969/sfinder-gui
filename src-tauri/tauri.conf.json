@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/tauri/main/packages/tauri-utils/schema/tauri.conf.schema.json",
   "productName": "sfinder-gui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.sfinder.gui",
   "build": {
     "beforeDevCommand": "npm run dev",

@@ -1,6 +1,6 @@
 {
   "name": "sfinder-gui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Desktop GUI wrapper for solution-finder (Tetris solution searcher)",
   "type": "module",
   "scripts": {

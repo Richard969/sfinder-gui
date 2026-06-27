@@ -1,6 +1,6 @@
 [package]
 name = "sfinder-gui"
-version = "1.0.0"
+version = "1.0.1"
 description = "Desktop GUI wrapper for solution-finder"
 authors = [""]
 edition = "2021"
