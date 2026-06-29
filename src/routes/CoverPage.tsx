@@ -122,7 +122,6 @@ export default function CoverPage() {
         } catch { continue; }
         encodePages.push({
           field: currentField.copy(),
-          comment: `${op.type}-${op.rotation}`,
           operation: { type: op.type as any, rotation: op.rotation as any, x: op.x, y: op.y },
         });
       }
