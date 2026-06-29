@@ -71,9 +71,8 @@ export default function CoverPage() {
   const t = useT();
   const ready = javaInfo.installed && jarInfo.found;
 
-  /// Build one tetfu per piece placement using original logic.
-  /// Collects all ops, applies sequentially, then generates ONE tetfu per page.
-  async function buildTetfus(): Promise<string[]> {
+  /// Build a single multi-page tetfu (same as original logic).
+  async function buildTetfu(): Promise<string | null> {
     const allOps: PieceOperation[] = [];
 
     for (const p of pages) {
@@ -97,16 +96,15 @@ export default function CoverPage() {
         const hasAny = PIECE_TYPES.some((t) => fieldStr.includes(t));
         if (!hasAny) continue;
         const result = await invoke<PieceOperation[]>('auto_split_field', { fieldStr });
-        if (!result || result.length === 0) return [];
+        if (!result || result.length === 0) return null;
         ops = result;
       }
       if (ops.length === 0) continue;
       allOps.push(...ops);
     }
 
-    if (allOps.length === 0) return [];
+    if (allOps.length === 0) return null;
 
-    // Apply sequentially, encode each page
     let currentField = Field.create(EMPTY_FIELD_STR, EMPTY_GARBAGE_STR);
     const firstPage = pages.find((p: any) => !p.operation) || pages[0];
     if (firstPage) {
@@ -119,32 +117,32 @@ export default function CoverPage() {
       }
     }
 
-    const tetfus: string[] = [];
+    const encodePages: EncodePage[] = [];
     for (const op of allOps) {
       try {
         currentField.fill({ type: op.type, rotation: op.rotation, x: op.x, y: op.y } as any);
       } catch { continue; }
-      tetfus.push(encoder.encode([{
+      encodePages.push({
         field: currentField.copy(),
         comment: `${op.type}-${op.rotation}`,
         operation: { type: op.type as any, rotation: op.rotation as any, x: op.x, y: op.y },
-      }]));
+      });
     }
 
-    return tetfus;
+    if (encodePages.length === 0) return null;
+    return encoder.encode(encodePages);
   }
 
   const runCover = useCallback(async () => {
     try {
-      const tetfus = await buildTetfus();
-      if (tetfus.length === 0) {
+      const tetfu = await buildTetfu();
+      if (!tetfu) {
         useCommandStore.getState().setError(t('cover.splitImpossible'));
         return;
       }
-
       execute({
         command: 'cover',
-        tetfu: tetfus,
+        tetfu: [tetfu],
         patterns, hold, drop,
         kicks: kicksPath,
         mode: mode || undefined,
