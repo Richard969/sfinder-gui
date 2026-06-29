@@ -71,70 +71,67 @@ export default function CoverPage() {
   const t = useT();
   const ready = javaInfo.installed && jarInfo.found;
 
-  /// Build one tetfu per piece placement.
-  /// Each tetfu shows the field BEFORE the piece, with the piece as an operation.
+  /// Build one tetfu per piece placement using original logic.
+  /// Collects all ops, applies sequentially, then generates ONE tetfu per page.
   async function buildTetfus(): Promise<string[]> {
-      const tetfus: string[] = [];
+    const allOps: PieceOperation[] = [];
 
-      // Collect all page data (from operations or auto-split)
-      const allOps: { op: PieceOperation; baseField: any }[] = [];
+    for (const p of pages) {
+      let ops: PieceOperation[];
 
-      for (const p of pages) {
-          let ops: PieceOperation[];
-
-          if (p.operation) {
-              ops = [{
-                  type: p.operation.type,
-                  rotation: p.operation.rotation,
-                  x: p.operation.x,
-                  y: p.operation.y,
-              }];
-          } else {
-              const field = p.field;
-              let fieldStr = '';
-              for (let y = 22; y >= 0; y--) {
-                  for (let x = 0; x < 10; x++) {
-                      fieldStr += field.at(x, y);
-                  }
-              }
-              const hasAny = PIECE_TYPES.some((t) => fieldStr.includes(t));
-              if (!hasAny) continue;
-
-              const result = await invoke<PieceOperation[]>('auto_split_field', { fieldStr });
-              if (!result || result.length === 0) return [];
-              ops = result;
+      if (p.operation) {
+        ops = [{
+          type: p.operation.type,
+          rotation: p.operation.rotation,
+          x: p.operation.x,
+          y: p.operation.y,
+        }];
+      } else {
+        const field = p.field;
+        let fieldStr = '';
+        for (let y = 22; y >= 0; y--) {
+          for (let x = 0; x < 10; x++) {
+            fieldStr += field.at(x, y);
           }
-
-          if (ops.length === 0) continue;
-
-          // Build a clean base field with garbage (X) cells preserved
-          let baseField = Field.create(EMPTY_FIELD_STR, EMPTY_GARBAGE_STR);
-          const refPage = pages.find((pp: any) => !pp.operation) || pages[0];
-          if (refPage) {
-              for (let y = 22; y >= 0; y--) {
-                  for (let x = 0; x < 10; x++) {
-                      if (refPage.field.at(x, y) === 'X') {
-                          baseField.set(x, y, 'X');
-                      }
-                  }
-              }
-          }
-
-          // For each operation, generate a tetfu with field=BEFORE placement
-          for (const op of ops) {
-              const encodePages: EncodePage[] = [{
-                  field: baseField.copy(),
-                  comment: `${op.type}-${op.rotation}`,
-                  operation: { type: op.type as any, rotation: op.rotation as any, x: op.x, y: op.y },
-              }];
-              tetfus.push(encoder.encode(encodePages));
-
-              // Apply piece for the next iteration's base field
-              try { baseField.fill({ type: op.type, rotation: op.rotation, x: op.x, y: op.y } as any); } catch {}
-          }
+        }
+        const hasAny = PIECE_TYPES.some((t) => fieldStr.includes(t));
+        if (!hasAny) continue;
+        const result = await invoke<PieceOperation[]>('auto_split_field', { fieldStr });
+        if (!result || result.length === 0) return [];
+        ops = result;
       }
+      if (ops.length === 0) continue;
+      allOps.push(...ops);
+    }
 
-      return tetfus;
+    if (allOps.length === 0) return [];
+
+    // Apply sequentially, encode each page
+    let currentField = Field.create(EMPTY_FIELD_STR, EMPTY_GARBAGE_STR);
+    const firstPage = pages.find((p: any) => !p.operation) || pages[0];
+    if (firstPage) {
+      for (let y = 22; y >= 0; y--) {
+        for (let x = 0; x < 10; x++) {
+          if (firstPage.field.at(x, y) === 'X') {
+            currentField.set(x, y, 'X');
+          }
+        }
+      }
+    }
+
+    const tetfus: string[] = [];
+    for (const op of allOps) {
+      try {
+        currentField.fill({ type: op.type, rotation: op.rotation, x: op.x, y: op.y } as any);
+      } catch { continue; }
+      tetfus.push(encoder.encode([{
+        field: currentField.copy(),
+        comment: `${op.type}-${op.rotation}`,
+        operation: { type: op.type as any, rotation: op.rotation as any, x: op.x, y: op.y },
+      }]));
+    }
+
+    return tetfus;
   }
 
   const runCover = useCallback(async () => {
