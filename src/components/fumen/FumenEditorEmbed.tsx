@@ -1,4 +1,5 @@
 import { useFumenStore } from '@/stores/fumenStore';
+import { usePieceKeys } from '@/hooks/usePieceKeys';
 import FieldGrid from './FieldGrid';
 import PiecePalette from './PiecePalette';
 import FumenToolbar from './FumenToolbar';
@@ -15,6 +16,8 @@ export default function FumenEditorEmbed({
   visibleRows, onVisibleRowsChange, className,
 }: FumenEditorEmbedProps) {
   const t = useT();
+  usePieceKeys();
+
   return (
     <div className={`flex flex-col gap-2 ${className ?? ''}`}>
       {/* Header: toolbar + controls */}

@@ -7,10 +7,12 @@ import RawOutput from './RawOutput';
 import PercentDisplay from './PercentDisplay';
 import { Search } from 'lucide-react';
 import { useT } from '@/i18n/useTranslation';
+import { parseCoverage } from '@/lib/output-parser';
 
 interface OutputViewerProps {
   output: SfinderOutput;
   command: string;
+  coverLogic?: string;
 }
 
 interface Solution {
@@ -173,7 +175,7 @@ function PathSummary({ total, minimal, allFumen, minFumen, onView, t }: { total:
   );
 }
 
-type TabId = 'summary' | 'solutions' | 'strict-minimal' | 'stdout' | 'csv' | 'stderr';
+type TabId = 'summary' | 'solutions' | 'strict-minimal' | 'minimal' | 'stdout' | 'csv' | 'stderr';
 
 function parseStdoutCoverage(stdout: string): { pct: string; fraction: string } | null {
   // Match: success = 100.00% (10080/10080) or similar
@@ -284,6 +286,89 @@ function PathCsvSummary({ rows, t, stdout, minimalRows, onView, totalPatterns }:
   );
 }
 
+function CoverSummary({ output, unique, minimal, allFumen, minFumen, onView, t, coverLogic }: {
+  output: SfinderOutput;
+  unique: Solution[];
+  minimal: Solution[];
+  allFumen?: string;
+  minFumen?: string;
+  onView: (f: string) => void;
+  t: (k: string) => string;
+  coverLogic?: string;
+}) {
+  const cov = parseCoverage(output.stdout);
+  const isAnd = coverLogic === 'and';
+  // For AND mode, stdout already has per-page OR + combined AND — extract the AND line
+  let andResult: { overallRatio: number; numerator?: number; denominator?: number } | null = null;
+  if (isAnd) {
+    const andMatch = output.stdout.match(/AND\s*=\s*(\d+\.?\d*)\s*%\s*\[(\d+)\/(\d+)\]/i);
+    if (andMatch) {
+      andResult = {
+        overallRatio: parseFloat(andMatch[1]),
+        numerator: parseInt(andMatch[2]),
+        denominator: parseInt(andMatch[3]),
+      };
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {isAnd && andResult ? (
+        <div className="rounded border border-primary/30 bg-primary/5 p-4 text-center">
+          <div className="text-xs text-muted-foreground mb-1">{t('cover.andCoverage')}</div>
+          <div className="text-4xl font-bold text-primary">{andResult.overallRatio.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {andResult.numerator} / {andResult.denominator} {t('cover.sequencesSuccessful')}
+          </div>
+        </div>
+      ) : cov ? (
+        <div className="rounded border border-primary/30 bg-primary/5 p-4 text-center">
+          <div className="text-xs text-muted-foreground mb-1">{t('cover.orCoverage')}</div>
+          <div className="text-4xl font-bold text-primary">{cov.overallRatio.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {cov.numerator} / {cov.denominator} {t('cover.sequencesSuccessful')}
+          </div>
+        </div>
+      ) : null}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded border border-border bg-background p-4 text-center">
+          <div className="text-3xl font-bold text-primary">{unique.length}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">{t('output.unique')}</div>
+        </div>
+        <div className="rounded border border-border bg-background p-4 text-center">
+          <div className="text-3xl font-bold text-primary">{minimal.length}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">{t('output.minimal')}</div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {allFumen && (
+          <button onClick={() => onView(allFumen!)}
+            className="w-full rounded-md bg-primary/15 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
+            {t('output.viewAllSolutions')}
+          </button>
+        )}
+        {minFumen && (
+          <button onClick={() => onView(minFumen!)}
+            className="w-full rounded-md bg-primary/15 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
+            {t('output.viewMinimalSolutions')}
+          </button>
+        )}
+      </div>
+      {/* Per-page OR breakdown for AND mode */}
+      {isAnd && (
+        <details className="text-xs">
+          <summary className="cursor-pointer text-muted-foreground hover:text-foreground py-1">
+            {t('cover.orCoverage')} per page
+          </summary>
+          <pre className="mt-2 p-2 rounded bg-secondary/30 text-muted-foreground max-h-40 overflow-y-auto whitespace-pre-wrap font-mono text-[11px]">
+            {output.stdout}
+          </pre>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function PathCsvTable({ rows, onView, t, totalPatterns }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; onView: (f: string) => void; totalPatterns: number }) {
   const [filter, setFilter] = useState('');
   const filtered = useMemo(
@@ -330,7 +415,7 @@ function PathCsvTable({ rows, onView, t, totalPatterns }: { rows: { fumen: strin
   );
 }
 
-export default function OutputViewer({ output, command }: OutputViewerProps) {
+export default function OutputViewer({ output, command, coverLogic }: OutputViewerProps) {
   const t = useT();
   const [activeTab, setActiveTab] = useState<TabId>(output.exitCode !== 0 ? 'stderr' : 'summary');
   const [fileContents, setFileContents] = useState<Record<string, string>>({});
@@ -447,6 +532,12 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
     tabs.push({ id: 'summary', label: t('output.summary') });
     tabs.push({ id: 'stdout', label: t('output.stdout') });
     if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
+  } else if (command === 'cover') {
+    tabs.push({ id: 'summary', label: t('output.summary') });
+    if (unique.length > 0) tabs.push({ id: 'solutions', label: `${t('output.unique')} (${unique.length})` });
+    if (minimal.length > 0) tabs.push({ id: 'minimal', label: `${t('output.minimal')} (${minimal.length})` });
+    tabs.push({ id: 'stdout', label: t('output.stdout') });
+    if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
   } else {
     tabs.push({ id: 'summary', label: t('output.summary') });
     if (unique.length + minimal.length > 0) tabs.push({ id: 'solutions', label: `${t('output.allSolutions')} (${unique.length + minimal.length})` });
@@ -483,7 +574,11 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
         {!failed && activeTab === 'summary' && command === 'path' && (
           <PathCsvSummary rows={pathRows} t={t} stdout={output.stdout} minimalRows={strictMinimalRows} onView={handleView} totalPatterns={pathTotalPatterns} />
         )}
-        {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && (
+        {!failed && activeTab === 'summary' && command === 'cover' && (
+          <CoverSummary output={output} unique={unique} minimal={minimal}
+            allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} coverLogic={coverLogic} />
+        )}
+        {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
         )}
         {!failed && activeTab === 'solutions' && command === 'path' && (
@@ -492,7 +587,13 @@ export default function OutputViewer({ output, command }: OutputViewerProps) {
         {!failed && activeTab === 'strict-minimal' && (
           <PathCsvTable rows={strictMinimalRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
         )}
-        {!failed && activeTab === 'solutions' && command !== 'path' && (
+        {!failed && activeTab === 'solutions' && command === 'cover' && (
+          <SolutionTable solutions={unique} label="unique" />
+        )}
+        {!failed && activeTab === 'minimal' && command === 'cover' && (
+          <SolutionTable solutions={minimal} label="minimal" />
+        )}
+        {!failed && activeTab === 'solutions' && command !== 'path' && command !== 'cover' && (
           <SolutionTable solutions={[...unique, ...minimal]} label="all" />
         )}
         {!failed && activeTab === 'stdout' && <RawOutput text={output.stdout || '(empty)'} />}

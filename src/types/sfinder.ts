@@ -45,10 +45,19 @@ export interface SfinderCommandConfig {
   threads?: number;
   maxLayer?: number;
   key?: CsvKey;
+  mode?: string;
+  coverLogic?: 'or' | 'and';
 }
 
 // --- Output from Rust backend ---
 export interface PathResultEntry {
+  fumen: string;
+  coverage: number;
+  used: string;
+}
+
+export interface CoverResultEntry {
+  pattern: string;
   fumen: string;
   coverage: number;
   used: string;
@@ -63,6 +72,8 @@ export interface SfinderOutput {
   pathResults?: PathResultEntry[];
   pathTotalPatterns?: number;
   strictMinimal?: PathResultEntry[];
+  coverResults?: CoverResultEntry[];
+  coverTotalPatterns?: number;
 }
 
 // --- Command execution state ---

@@ -50,10 +50,21 @@ pub struct SfinderCommandConfig {
     #[serde(rename = "maxLayer")]
     pub max_layer: Option<u32>,
     pub key: Option<String>,
+    pub mode: Option<String>,
+    #[serde(rename = "coverLogic")]
+    pub cover_logic: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PathResultEntry {
+    pub fumen: String,
+    pub coverage: u32,
+    pub used: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CoverResultEntry {
+    pub pattern: String,
     pub fumen: String,
     pub coverage: u32,
     pub used: String,
@@ -78,6 +89,12 @@ pub struct SfinderOutput {
     #[serde(rename = "strictMinimal")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_minimal: Option<Vec<PathResultEntry>>,
+    #[serde(rename = "coverResults")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cover_results: Option<Vec<CoverResultEntry>>,
+    #[serde(rename = "coverTotalPatterns")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cover_total_patterns: Option<u32>,
 }
 
 // --- Commands ---

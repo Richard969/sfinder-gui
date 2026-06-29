@@ -22,10 +22,11 @@ export default function PathPage() {
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
+  const currentPageIndex = useFumenStore((s) => s.currentPageIndex);
   const [hold, setHold] = useState<HoldOption>('use');
   const [drop, setDrop] = useState<DropType>('softdrop');
   const [kicksPath, setKicksPath] = useState('srs');
-  const [page, setPage] = useState(1);
+  const page = currentPageIndex + 1;
   const clearLine = useFumenStore((s) => s.clearLine);
   const setClearLine = useFumenStore((s) => s.setClearLine);
   const [split, setSplit] = useState(false);

@@ -1,4 +1,6 @@
+mod color_split;
 mod commands;
+mod kick_table;
 mod sfinder;
 
 use sfinder::CommandState;
@@ -16,6 +18,7 @@ pub fn run() {
             commands::cancel_command,
             commands::read_output_file,
             commands::get_bundled_jar,
+            color_split::auto_split_field,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

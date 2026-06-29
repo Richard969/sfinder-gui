@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
-use crate::commands::PathResultEntry;
+use crate::commands::{PathResultEntry, CoverResultEntry};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 
@@ -47,8 +47,9 @@ impl CommandState {
 /// Build the CLI argument vector from the command config
 fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
     let mut args = Vec::new();
+    let is_cover = config.command == "cover";
 
-    // --output-base (only if user specified one)
+    // --output-base
     if let Some(ref output_base) = config.output_base {
         if !output_base.is_empty() {
             args.push("--output-base".to_string());
@@ -56,79 +57,134 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
         }
     }
 
-    let cmd = config.command.clone();
-    args.push(cmd);
+    args.push(config.command.clone());
 
+    // --tetfu
     if !config.tetfu.is_empty() {
         args.push("--tetfu".to_string());
         args.push(config.tetfu.clone());
     }
-    if let Some(page) = config.page {
-        args.push("--page".to_string());
-        args.push(page.to_string());
+
+    // --page (not valid for cover)
+    if !is_cover {
+        if let Some(page) = config.page {
+            args.push("--page".to_string());
+            args.push(page.to_string());
+        }
     }
+
+    // --clear-line / --max-clearline (cover uses different flag)
     if let Some(cl) = config.clear_line {
-        args.push("--clear-line".to_string());
+        if is_cover {
+            args.push("--max-clearline".to_string());
+        } else {
+            args.push("--clear-line".to_string());
+        }
         args.push(cl.to_string());
     }
+
+    // --patterns
     if let Some(ref patterns) = config.patterns {
         if !patterns.is_empty() {
             args.push("--patterns".to_string());
             args.push(patterns.clone());
         }
     }
+
+    // --hold
     if let Some(ref hold) = config.hold {
         args.push("--hold".to_string());
         args.push(hold.clone());
     }
+
+    // --drop
     if let Some(ref drop) = config.drop {
         args.push("--drop".to_string());
         args.push(drop.clone());
     }
+
+    // --kicks
     if let Some(ref kicks) = config.kicks {
         args.push("--kicks".to_string());
         args.push(kicks.clone());
     }
-    if let Some(ref format) = config.format {
-        if !format.is_empty() {
-            args.push("--format".to_string());
-            args.push(format.clone());
+
+    // --format (not valid for cover)
+    if !is_cover {
+        if let Some(ref format) = config.format {
+            if !format.is_empty() {
+                args.push("--format".to_string());
+                args.push(format.clone());
+            }
         }
     }
-    if config.split.unwrap_or(false) {
-        args.push("--split".to_string());
-        args.push("yes".to_string());
+
+    // --split (not valid for cover)
+    if !is_cover {
+        if config.split.unwrap_or(false) {
+            args.push("--split".to_string());
+            args.push("yes".to_string());
+        }
     }
-    if config.specified_only.unwrap_or(false) {
-        args.push("--specified-only".to_string());
+
+    // --specified-only (not valid for cover)
+    if !is_cover {
+        if config.specified_only.unwrap_or(false) {
+            args.push("--specified-only".to_string());
+        }
     }
+
+    // --reserved
     if config.reserved.unwrap_or(false) {
         args.push("--reserved".to_string());
     }
+
+    // --field-path
     if let Some(ref field_path) = config.field_path {
         if !field_path.is_empty() {
             args.push("--field-path".to_string());
             args.push(field_path.clone());
         }
     }
+
+    // --patterns-path
     if let Some(ref patterns_path) = config.patterns_path {
         if !patterns_path.is_empty() {
             args.push("--patterns-path".to_string());
             args.push(patterns_path.clone());
         }
     }
+
+    // --threads
     if let Some(threads) = config.threads {
         args.push("--threads".to_string());
         args.push(threads.to_string());
     }
+
+    // --max-layer
     if let Some(max_layer) = config.max_layer {
         args.push("--max-layer".to_string());
         args.push(max_layer.to_string());
     }
-    if let Some(ref key) = config.key {
-        args.push("--key".to_string());
-        args.push(key.clone());
+
+    // --key (not valid for cover)
+    if !is_cover {
+        if let Some(ref key) = config.key {
+            args.push("--key".to_string());
+            args.push(key.clone());
+        }
     }
+
+    // --mode (cover only: normal / tspin)
+    if is_cover {
+        if let Some(ref mode) = config.mode {
+            if !mode.is_empty() {
+                args.push("--mode".to_string());
+                args.push(mode.clone());
+            }
+        }
+    }
+
     args
 }
 
@@ -235,6 +291,29 @@ pub fn find_strict_minimal(results: &[PathResultEntry], csv_path: &str) -> Vec<P
     }
 
     selected.into_iter().filter_map(|f| fumen_map.remove(&f)).collect()
+}
+
+/// Parse cover CSV and return per-pattern results.
+/// CSV format: pattern,coverage,used,unused,fumen(semicolon-separated)
+pub fn parse_cover_csv(csv_path: &str) -> (Vec<CoverResultEntry>, u32) {
+    let Ok(content) = std::fs::read_to_string(csv_path) else {
+        return (vec![], 0);
+    };
+    let mut results = Vec::new();
+    let mut total: u32 = 0;
+
+    for line in content.lines().skip(1) {
+        let cols: Vec<&str> = line.split(',').collect();
+        if cols.len() < 5 { continue; }
+        total += 1;
+        results.push(CoverResultEntry {
+            pattern: cols[0].trim().to_string(),
+            fumen: cols[4].trim().to_string(),
+            coverage: cols[1].trim().parse().unwrap_or(0),
+            used: cols[2].trim().to_string(),
+        });
+    }
+    (results, total)
 }
 
 fn resolve_output_dir(config: &SfinderCommandConfig) -> String {
@@ -358,6 +437,15 @@ pub async fn execute_sfinder(
                 let path_results = if path_results.is_empty() { None } else { Some(path_results) };
                 let path_total_patterns = if path_total > 0 { Some(path_total) } else { None };
 
+                let (cover_results, cover_total) = if config.command == "cover" {
+                    let csv_path = format!("{}/cover.csv", resolve_output_dir(config));
+                    parse_cover_csv(&csv_path)
+                } else {
+                    (vec![], 0)
+                };
+                let cover_results = if cover_results.is_empty() { None } else { Some(cover_results) };
+                let cover_total_patterns = if cover_total > 0 { Some(cover_total) } else { None };
+
                 return Ok(SfinderOutput {
                     stdout,
                     stderr,
@@ -367,6 +455,8 @@ pub async fn execute_sfinder(
                     path_results,
                     path_total_patterns,
                     strict_minimal,
+                    cover_results,
+                    cover_total_patterns,
                 });
             }
             CommandEvent::Error(err) => {

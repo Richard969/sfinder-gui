@@ -51,6 +51,9 @@ export function buildCliArgs(config: SfinderCommandConfig): string[] {
   if (config.key) {
     args.push('--key', config.key);
   }
+  if (config.mode) {
+    args.push('--mode', config.mode);
+  }
   return args;
 }
 
