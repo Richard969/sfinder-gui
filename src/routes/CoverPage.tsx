@@ -102,7 +102,7 @@ export default function CoverPage() {
       }
       if (ops.length === 0) continue;
 
-      // Build a multi-page tetfu for this page's ops
+      // Start from the page's actual field (only garbage cells remain as blocks)
       let currentField = Field.create(EMPTY_FIELD_STR, EMPTY_GARBAGE_STR);
       const refPage = pages.find((pp: any) => !pp.operation) || pages[0];
       if (refPage) {
@@ -115,18 +115,46 @@ export default function CoverPage() {
         }
       }
 
+      // Find the bottom row that has any block (garbage or filled)
+      let bottomRow = 0;
+      for (let y = 0; y <= 22; y++) {
+        for (let x = 0; x < 10; x++) {
+          if (currentField.at(x, y) !== '_') {
+            bottomRow = y + 1;
+          }
+        }
+      }
+
       const encodePages: EncodePage[] = [];
       for (const op of ops) {
         try {
           currentField.fill({ type: op.type, rotation: op.rotation, x: op.x, y: op.y } as any);
         } catch { continue; }
+        // Update bottom row to include placed piece
+        const pieceY = op.y;
+        if (pieceY + 2 > bottomRow) bottomRow = pieceY + 2;
         encodePages.push({
           field: currentField.copy(),
           operation: { type: op.type as any, rotation: op.rotation as any, x: op.x, y: op.y },
         });
       }
       if (encodePages.length === 0) continue;
-      tetfus.push(encoder.encode(encodePages));
+
+      // Trim field to only bottomRow+1 rows
+      const trimPages: EncodePage[] = encodePages.map((ep) => {
+        const trimmed = Field.create('_'.repeat(10 * (bottomRow + 1)), EMPTY_GARBAGE_STR);
+        for (let y = 0; y <= bottomRow; y++) {
+          for (let x = 0; x < 10; x++) {
+            const cell = ep.field.at(x, y);
+            if (cell !== '_' && cell !== undefined) {
+              trimmed.set(x, y, cell);
+            }
+          }
+        }
+        return { field: trimmed, operation: ep.operation };
+      });
+
+      tetfus.push(encoder.encode(trimPages));
     }
 
     return tetfus;
