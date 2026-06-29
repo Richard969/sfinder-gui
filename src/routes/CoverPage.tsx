@@ -115,7 +115,7 @@ export default function CoverPage() {
         }
       }
 
-      // Find the bottom row that has any block (garbage or filled)
+      // Find the bottom row that has any block (garbage or existing)
       let bottomRow = 0;
       for (let y = 0; y <= 22; y++) {
         for (let x = 0; x < 10; x++) {
@@ -127,10 +127,7 @@ export default function CoverPage() {
 
       const encodePages: EncodePage[] = [];
       for (const op of ops) {
-        try {
-          currentField.fill({ type: op.type, rotation: op.rotation, x: op.x, y: op.y } as any);
-        } catch { continue; }
-        // Update bottom row to include placed piece
+        // DO NOT fill piece blocks — only operation (locked) tells sfinder where it goes
         const pieceY = op.y;
         if (pieceY + 2 > bottomRow) bottomRow = pieceY + 2;
         encodePages.push({
