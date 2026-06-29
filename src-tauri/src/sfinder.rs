@@ -60,9 +60,11 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
     args.push(config.command.clone());
 
     // --tetfu
-    if !config.tetfu.is_empty() {
-        args.push("--tetfu".to_string());
-        args.push(config.tetfu.clone());
+    for t in &config.tetfu {
+        if !t.is_empty() {
+            args.push("--tetfu".to_string());
+            args.push(t.clone());
+        }
     }
 
     // --page (not valid for cover)

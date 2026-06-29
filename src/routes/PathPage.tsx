@@ -42,7 +42,7 @@ export default function PathPage() {
       <CommandOptions hold={hold} onHoldChange={setHold} drop={drop} onDropChange={setDrop}
         kicksPath={kicksPath} onKicksPathChange={setKicksPath} split={split} onSplitChange={setSplit} />
       <CommandRunner status={status}
-        onExecute={() => execute({ command: 'path', tetfu: editorFumen, patterns, hold, drop, kicks: kicksPath, format: 'csv', key: 'pattern', page, clearLine, split })}
+        onExecute={() => execute({ command: 'path', tetfu: [editorFumen], patterns, hold, drop, kicks: kicksPath, format: 'csv', key: 'pattern', page, clearLine, split })}
         onCancel={() => {}} disabled={!ready || !editorFumen || !patterns} />
       {status.type === 'success' && <OutputViewer output={status.output} command="path" />}
     </div>

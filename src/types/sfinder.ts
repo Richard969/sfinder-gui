@@ -26,7 +26,7 @@ export type CsvKey = 'solution' | 'pattern' | 'use';
 // --- Unified command configuration ---
 export interface SfinderCommandConfig {
   command: SfinderCommand;
-  tetfu: string;
+  tetfu: string[];
   jarPath?: string;
   javaPath?: string;
   page?: number;
