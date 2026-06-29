@@ -601,8 +601,15 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         {!failed && activeTab === 'stderr' && <RawOutput text={output.stderr || '(empty)'} />}
       </div>
 
-      <div className="flex items-center border-t border-border px-4 py-2 text-xs text-muted-foreground">
+      <div className="flex items-center border-t border-border px-4 py-2 text-xs text-muted-foreground gap-2">
         <span className="font-mono truncate">{output.commandLine}</span>
+        <button
+          onClick={() => navigator.clipboard.writeText(output.commandLine)}
+          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded hover:bg-secondary"
+          title={t('output.copyCommand')}
+        >
+          📋
+        </button>
         {output.exitCode !== 0 && (
           <span className="text-red-400 shrink-0 ml-auto">{t('output.exit')}: {output.exitCode}</span>
         )}
