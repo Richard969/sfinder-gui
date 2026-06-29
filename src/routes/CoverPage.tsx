@@ -71,9 +71,10 @@ export default function CoverPage() {
   const t = useT();
   const ready = javaInfo.installed && jarInfo.found;
 
-  /// Build a single multi-page tetfu (same as original logic).
-  async function buildTetfu(): Promise<string | null> {
-    const allOps: PieceOperation[] = [];
+  /// Build one tetfu per page.
+  /// Each tetfu = one placement pattern (may be multi-page if auto-split).
+  async function buildTetfus(): Promise<string[]> {
+    const tetfus: string[] = [];
 
     for (const p of pages) {
       let ops: PieceOperation[];
@@ -96,53 +97,52 @@ export default function CoverPage() {
         const hasAny = PIECE_TYPES.some((t) => fieldStr.includes(t));
         if (!hasAny) continue;
         const result = await invoke<PieceOperation[]>('auto_split_field', { fieldStr });
-        if (!result || result.length === 0) return null;
+        if (!result || result.length === 0) return [];
         ops = result;
       }
       if (ops.length === 0) continue;
-      allOps.push(...ops);
-    }
 
-    if (allOps.length === 0) return null;
-
-    let currentField = Field.create(EMPTY_FIELD_STR, EMPTY_GARBAGE_STR);
-    const firstPage = pages.find((p: any) => !p.operation) || pages[0];
-    if (firstPage) {
-      for (let y = 22; y >= 0; y--) {
-        for (let x = 0; x < 10; x++) {
-          if (firstPage.field.at(x, y) === 'X') {
-            currentField.set(x, y, 'X');
+      // Build a multi-page tetfu for this page's ops
+      let currentField = Field.create(EMPTY_FIELD_STR, EMPTY_GARBAGE_STR);
+      const refPage = pages.find((pp: any) => !pp.operation) || pages[0];
+      if (refPage) {
+        for (let y = 22; y >= 0; y--) {
+          for (let x = 0; x < 10; x++) {
+            if (refPage.field.at(x, y) === 'X') {
+              currentField.set(x, y, 'X');
+            }
           }
         }
       }
+
+      const encodePages: EncodePage[] = [];
+      for (const op of ops) {
+        try {
+          currentField.fill({ type: op.type, rotation: op.rotation, x: op.x, y: op.y } as any);
+        } catch { continue; }
+        encodePages.push({
+          field: currentField.copy(),
+          comment: `${op.type}-${op.rotation}`,
+          operation: { type: op.type as any, rotation: op.rotation as any, x: op.x, y: op.y },
+        });
+      }
+      if (encodePages.length === 0) continue;
+      tetfus.push(encoder.encode(encodePages));
     }
 
-    const encodePages: EncodePage[] = [];
-    for (const op of allOps) {
-      try {
-        currentField.fill({ type: op.type, rotation: op.rotation, x: op.x, y: op.y } as any);
-      } catch { continue; }
-      encodePages.push({
-        field: currentField.copy(),
-        comment: `${op.type}-${op.rotation}`,
-        operation: { type: op.type as any, rotation: op.rotation as any, x: op.x, y: op.y },
-      });
-    }
-
-    if (encodePages.length === 0) return null;
-    return encoder.encode(encodePages);
+    return tetfus;
   }
 
   const runCover = useCallback(async () => {
     try {
-      const tetfu = await buildTetfu();
-      if (!tetfu) {
+      const tetfus = await buildTetfus();
+      if (tetfus.length === 0) {
         useCommandStore.getState().setError(t('cover.splitImpossible'));
         return;
       }
       execute({
         command: 'cover',
-        tetfu: [tetfu],
+        tetfu: tetfus,
         patterns, hold, drop,
         kicks: kicksPath,
         mode: mode || undefined,
