@@ -330,46 +330,16 @@ function CoverSummary({ output, unique, minimal, allFumen, minFumen, onView, t, 
           </div>
         </div>
       ) : null}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded border border-border bg-background p-4 text-center">
-          <div className="text-3xl font-bold text-primary">{unique.length}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">{t('output.unique')}</div>
-        </div>
-        <div className="rounded border border-border bg-background p-4 text-center">
-          <div className="text-3xl font-bold text-primary">{minimal.length}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">{t('output.minimal')}</div>
-        </div>
       </div>
-      <div className="space-y-2">
-        {allFumen && (
-          <button onClick={() => onView(allFumen!)}
-            className="w-full rounded-md bg-primary/15 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
-            {t('output.viewAllSolutions')}
-          </button>
-        )}
-        {minFumen && (
-          <button onClick={() => onView(minFumen!)}
-            className="w-full rounded-md bg-primary/15 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
-            {t('output.viewMinimalSolutions')}
-          </button>
-        )}
-      </div>
-      {/* Per-page OR breakdown for AND mode */}
-      {isAnd && (
-        <details className="text-xs">
-          <summary className="cursor-pointer text-muted-foreground hover:text-foreground py-1">
-            {t('cover.orCoverage')} per page
-          </summary>
-          <pre className="mt-2 p-2 rounded bg-secondary/30 text-muted-foreground max-h-40 overflow-y-auto whitespace-pre-wrap font-mono text-[11px]">
-            {output.stdout}
-          </pre>
-        </details>
-      )}
-    </div>
-  );
-}
+    );
+  }
 
-function PathCsvTable({ rows, onView, t, totalPatterns }: { rows: { fumen: string; coverage: number; used: string }[]; t: (k: string) => string; onView: (f: string) => void; totalPatterns: number }) {
+  function CoverCsvSummary({ rows, onView, t, totalPatterns }: {
+  rows: { fumen: string; coverage: number; used: string }[];
+  onView: (f: string) => void;
+  t: (k: string) => string;
+  totalPatterns: number;
+}) {
   const [filter, setFilter] = useState('');
   const filtered = useMemo(
     () => filter ? rows.filter((r) => r.used.toUpperCase().includes(filter.toUpperCase())) : rows,
@@ -534,8 +504,6 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
   } else if (command === 'cover') {
     tabs.push({ id: 'summary', label: t('output.summary') });
-    if (unique.length > 0) tabs.push({ id: 'solutions', label: `${t('output.unique')} (${unique.length})` });
-    if (minimal.length > 0) tabs.push({ id: 'minimal', label: `${t('output.minimal')} (${minimal.length})` });
     tabs.push({ id: 'stdout', label: t('output.stdout') });
     if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
   } else {
