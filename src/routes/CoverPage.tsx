@@ -67,13 +67,17 @@ export default function CoverPage() {
   const setClearLine = useFumenStore((s) => s.setClearLine);
   const [mode, setMode] = useState('normal');
   const [coverLogic, setCoverLogic] = useState<CoverLogic>('or');
+  const [trimWarning, setTrimWarning] = useState<string | null>(null);
 
   const t = useT();
   const ready = javaInfo.installed && jarInfo.found;
 
   /// Build one tetfu per page.
   /// Each tetfu = one placement pattern (may be multi-page if auto-split).
+  /// Trims field to maxRows, warns if content exceeds.
   async function buildTetfus(): Promise<string[]> {
+    const maxRows = clearLine + 4;
+    setTrimWarning(null);
     const tetfus: string[] = [];
 
     for (const p of pages) {
@@ -125,22 +129,32 @@ export default function CoverPage() {
         }
       }
 
+      let height = bottomRow + 1;
+      for (const op of ops) {
+        const pieceBottom = (op.y || 0) + 2;
+        if (pieceBottom > height) height = pieceBottom;
+      }
+
+      if (height > maxRows) {
+        setTrimWarning(`${t('cover.trimWarning')} (max: ${maxRows}, found: ${height})`);
+        height = maxRows;
+      }
+
       const encodePages: EncodePage[] = [];
       for (const op of ops) {
         // DO NOT fill piece blocks — only operation (locked) tells sfinder where it goes
-        const pieceY = op.y;
-        if (pieceY + 2 > bottomRow) bottomRow = pieceY + 2;
         encodePages.push({
           field: currentField.copy(),
+          comment: `${op.type}-${op.rotation}`,
           operation: { type: op.type as any, rotation: op.rotation as any, x: op.x, y: op.y },
         });
       }
       if (encodePages.length === 0) continue;
 
-      // Trim field to only bottomRow+1 rows
+      // Trim field to height rows
       const trimPages: EncodePage[] = encodePages.map((ep) => {
-        const trimmed = Field.create('_'.repeat(10 * (bottomRow + 1)), EMPTY_GARBAGE_STR);
-        for (let y = 0; y <= bottomRow; y++) {
+        const trimmed = Field.create('_'.repeat(10 * height), EMPTY_GARBAGE_STR);
+        for (let y = 0; y < height; y++) {
           for (let x = 0; x < 10; x++) {
             const cell = ep.field.at(x, y);
             if (cell !== '_' && cell !== undefined) {
@@ -249,6 +263,13 @@ export default function CoverPage() {
           </div>
         </div>
       </div>
+
+      {/* Trim warning */}
+      {trimWarning && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-md px-4 py-2 text-xs text-yellow-600">
+          ⚠️ {trimWarning.split('(')[0]}<span className="text-yellow-500"> ({trimWarning.split('(')[1]}</span>
+        </div>
+      )}
 
       {/* Execute — same runner for both logics */}
       <CommandRunner

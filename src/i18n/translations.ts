@@ -168,6 +168,7 @@ const en = {
     sequencesSuccessful: 'sequences successful',
     orCoverage: 'OR Coverage',
     andCoverage: 'AND Coverage',
+    trimWarning: 'Field exceeds display height — content above will be trimmed.',
   },
   view: {
     allSolutions: 'All Solutions',
@@ -344,6 +345,7 @@ const zh: typeof en = {
     sequencesSuccessful: '个序列成功',
     orCoverage: 'OR 覆盖率',
     andCoverage: 'AND 覆盖率',
+    trimWarning: '场地高度超出显示范围，超出部分将被裁切。',
   },
   view: {
     allSolutions: '全部解法',
