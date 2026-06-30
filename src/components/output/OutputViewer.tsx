@@ -286,13 +286,8 @@ function PathCsvSummary({ rows, t, stdout, minimalRows, onView, totalPatterns }:
   );
 }
 
-function CoverSummary({ output, unique, minimal, allFumen, minFumen, onView, t, coverLogic }: {
+function CoverSummary({ output, t, coverLogic }: {
   output: SfinderOutput;
-  unique: Solution[];
-  minimal: Solution[];
-  allFumen?: string;
-  minFumen?: string;
-  onView: (f: string) => void;
   t: (k: string) => string;
   coverLogic?: string;
 }) {
@@ -543,8 +538,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
           <PathCsvSummary rows={pathRows} t={t} stdout={output.stdout} minimalRows={strictMinimalRows} onView={handleView} totalPatterns={pathTotalPatterns} />
         )}
         {!failed && activeTab === 'summary' && command === 'cover' && (
-          <CoverSummary output={output} unique={unique} minimal={minimal}
-            allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} coverLogic={coverLogic} />
+          <CoverSummary output={output} t={t} coverLogic={coverLogic} />
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
