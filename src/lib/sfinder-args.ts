@@ -9,8 +9,8 @@ export function buildCliArgs(config: SfinderCommandConfig): string[] {
 
   args.push(config.command);
 
-  if (config.tetfu) {
-    args.push('--tetfu', config.tetfu);
+  for (const t of config.tetfu) {
+    if (t) args.push('--tetfu', t);
   }
   if (config.page !== undefined) {
     args.push('--page', String(config.page));

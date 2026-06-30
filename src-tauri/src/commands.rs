@@ -22,7 +22,7 @@ pub struct SfinderJarInfo {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SfinderCommandConfig {
     pub command: String,
-    pub tetfu: String,
+    pub tetfu: Vec<String>,
     #[serde(rename = "jarPath")]
     pub jar_path: Option<String>,
     #[serde(rename = "javaPath")]
