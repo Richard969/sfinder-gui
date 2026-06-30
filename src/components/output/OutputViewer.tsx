@@ -550,10 +550,10 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
         )}
         {!failed && activeTab === 'solutions' && command === 'path' && (
-          <PathCsvTable rows={pathRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
+          <CoverCsvSummary rows={pathRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
         )}
         {!failed && activeTab === 'strict-minimal' && (
-          <PathCsvTable rows={strictMinimalRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
+          <CoverCsvSummary rows={strictMinimalRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
         )}
         {!failed && activeTab === 'solutions' && command === 'cover' && (
           <SolutionTable solutions={unique} label="unique" />

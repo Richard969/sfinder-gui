@@ -29,22 +29,6 @@ interface PieceOperation {
 
 type CoverLogic = 'or' | 'and';
 
-/** Merge all pages into a single field (for garbage cell support) */
-function mergeGarbageField(pages: any[]): string {
-  const field = Field.create(EMPTY_FIELD_STR, EMPTY_GARBAGE_STR);
-  for (const p of pages) {
-    if (!p.operation) {
-      for (let y = 22; y >= 0; y--) {
-        for (let x = 0; x < 10; x++) {
-          const cell = p.field.at(x, y);
-          if (cell === 'X') field.set(x, y, 'X');
-        }
-      }
-    }
-  }
-  return field.to_fumen_string(); // or similar
-}
-
 export default function CoverPage() {
   const jarInfo = useAppStore((s) => s.sfinderJarInfo);
   const javaInfo = useAppStore((s) => s.javaInfo);
@@ -154,11 +138,12 @@ export default function CoverPage() {
       // Trim field to height rows
       const trimPages: EncodePage[] = encodePages.map((ep) => {
         const trimmed = Field.create('_'.repeat(10 * height), EMPTY_GARBAGE_STR);
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < 10; x++) {
-            const cell = ep.field.at(x, y);
-            if (cell !== '_' && cell !== undefined) {
-              trimmed.set(x, y, cell);
+        const src = ep.field;
+        if (src) {
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < 10; x++) {
+              const cell = src.at(x, y);
+              if (cell !== '_') trimmed.set(x, y, cell);
             }
           }
         }
