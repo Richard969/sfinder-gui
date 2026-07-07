@@ -1,12 +1,45 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useAppStore } from '@/stores/appStore';
+import type { JavaInfo } from '@/types/app';
 
 export default function SettingsPage() {
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const javaInfo = useAppStore((s) => s.javaInfo);
+  const setJavaInfo = useAppStore((s) => s.setJavaInfo);
   const sfinderJarInfo = useAppStore((s) => s.sfinderJarInfo);
+  const setSfinderJarInfo = useAppStore((s) => s.setSfinderJarInfo);
+
+  // Re-check Java when path changes
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const info = await invoke<JavaInfo>('check_java', {
+          javaPath: settings.javaPath || null,
+        });
+        if (!cancelled) setJavaInfo(info);
+      } catch { if (!cancelled) setJavaInfo({ installed: false }); }
+    })();
+    return () => { cancelled = true; };
+  }, [settings.javaPath, setJavaInfo]);
+
+  // Re-check JAR when path changes
+  useEffect(() => {
+    if (!settings.sfinderJarPath) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const info = await invoke<{ found: boolean; path?: string; version?: string }>(
+          'check_sfinder_jar', { path: settings.sfinderJarPath }
+        );
+        if (!cancelled) setSfinderJarInfo(info);
+      } catch { if (!cancelled) setSfinderJarInfo({ found: false }); }
+    })();
+    return () => { cancelled = true; };
+  }, [settings.sfinderJarPath, setSfinderJarInfo]);
 
   const browseFile = useCallback(async (setter: (v: string) => void, filters?: { name: string; extensions: string[] }[]) => {
     const result = await open({ multiple: false, filters });
@@ -35,7 +68,8 @@ export default function SettingsPage() {
               placeholder="java (use system PATH)"
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm
                 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            <button onClick={() => browseFile((v) => updateSettings({ javaPath: v }))}
+            <button onClick={() => browseFile((v) => updateSettings({ javaPath: v }),
+              [{ name: 'Java', extensions: ['exe', ''] }])}
               className="px-3 py-2 rounded-md bg-secondary text-xs text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors shrink-0">
               Browse
             </button>
