@@ -100,10 +100,11 @@ pub struct SfinderOutput {
 // --- Commands ---
 
 #[tauri::command]
-pub async fn check_java(app: AppHandle) -> Result<JavaInfo, String> {
+pub async fn check_java(app: AppHandle, java_path: Option<String>) -> Result<JavaInfo, String> {
+    let java_exe = java_path.as_deref().filter(|p| !p.is_empty()).unwrap_or("java");
     let shell = app.shell();
     let output = shell
-        .command("java")
+        .command(java_exe)
         .args(["-version"])
         .output()
         .await
@@ -134,7 +135,7 @@ pub async fn check_java(app: AppHandle) -> Result<JavaInfo, String> {
         Ok(JavaInfo {
             installed: true,
             version,
-            path: Some("java".to_string()),
+            path: Some(java_exe.to_string()),
         })
     } else {
         Ok(JavaInfo {

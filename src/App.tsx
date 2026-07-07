@@ -19,8 +19,9 @@ export default function App() {
   const setJavaInfo = useAppStore((s) => s.setJavaInfo);
   const setSfinderJarInfo = useAppStore((s) => s.setSfinderJarInfo);
   const updateSettings = useAppStore((s) => s.updateSettings);
-  const sfinderJarPath = useAppStore((s) => s.settings.sfinderJarPath);
-  const theme = useAppStore((s) => s.settings.theme);
+  const settings = useAppStore((s) => s.settings);
+  const { sfinderJarPath, javaPath } = settings;
+  const theme = settings.theme;
 
   // Apply theme
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const info = await invoke<JavaInfo>('check_java');
+        const info = await invoke<JavaInfo>('check_java', { javaPath: javaPath || null });
         setJavaInfo(info);
       } catch { setJavaInfo({ installed: false }); }
       try {
