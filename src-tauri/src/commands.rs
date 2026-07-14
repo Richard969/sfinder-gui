@@ -214,7 +214,7 @@ pub async fn recognize_field_from_bytes(bytes: Vec<u8>) -> Result<String, String
 /// Capture a screen region and recognize the Tetris board in one shot.
 /// Tries multiple screenshot tools in order, then runs recognition.
 #[tauri::command]
-pub async fn capture_and_recognize(app: AppHandle) -> Result<String, String> {
+pub async fn capture_and_recognize(_app: AppHandle) -> Result<String, String> {
     let tmp_dir = std::env::temp_dir();
     let output = tmp_dir.join("sfinder_screenshot.png");
     let output_str = output.to_string_lossy().to_string();
