@@ -112,13 +112,17 @@ fn find_board_bounds(img: &RgbImage) -> (u32, u32, u32, u32) {
 /// Uses YUV distance against reference colors (primary) + HSL hue check (secondary).
 fn match_piece_color(r: u8, g: u8, b: u8) -> char {
     // Quick reject: very dark cells are empty
-    let (_, _, l) = rgb_to_hsl(r, g, b);
+    let (_, s, l) = rgb_to_hsl(r, g, b);
     if l < MIN_LIGHTNESS {
         return '_';
     }
+    // Very low saturation + moderate lightness → garbage (gray)
+    if s < 12.0 && l > 30.0 {
+        return 'X';
+    }
 
-    // Primary: YUV distance to reference colors
-    let mut best = '_';
+    // Nearest reference color — no distance cutoff, always classify
+    let mut best = 'X';
     let mut best_dist = f64::MAX;
     for &(ref_r, ref_g, ref_b, pc) in REFERENCE_COLORS {
         let d = color_distance((r, g, b), (ref_r, ref_g, ref_b));
@@ -127,19 +131,38 @@ fn match_piece_color(r: u8, g: u8, b: u8) -> char {
             best = pc;
         }
     }
-
-    // Distance threshold: if too far from any reference, it's empty
-    if best_dist > 0.8 {
-        return '_';
-    }
-
-    // Secondary: verify with HSL that this makes sense
-    // (e.g. a dark gray pixel close to 'X' in YUV should still be empty)
-    if best == 'X' && l < 35.0 {
-        return '_';
-    }
-
     best
+}
+
+/// Sample the average color of a small region around (cx, cy).
+/// Helps with anti-aliased edges.
+fn sample_cell_avg(img: &RgbImage, cx: u32, cy: u32, radius: u32) -> (u8, u8, u8) {
+    let (w, h) = img.dimensions();
+    let x0 = cx.saturating_sub(radius);
+    let y0 = cy.saturating_sub(radius);
+    let x1 = (cx + radius).min(w - 1);
+    let y1 = (cy + radius).min(h - 1);
+    let mut r = 0u64;
+    let mut g = 0u64;
+    let mut b = 0u64;
+    let mut count = 0u64;
+    for py in y0..=y1 {
+        for px in x0..=x1 {
+            let pixel = img.get_pixel(px, py);
+            let (_, _, l) = rgb_to_hsl(pixel[0], pixel[1], pixel[2]);
+            if l > MIN_LIGHTNESS * 0.7 {
+                r += pixel[0] as u64;
+                g += pixel[1] as u64;
+                b += pixel[2] as u64;
+                count += 1;
+            }
+        }
+    }
+    if count == 0 {
+        let p = img.get_pixel(cx, cy);
+        return (p[0], p[1], p[2]);
+    }
+    ((r / count) as u8, (g / count) as u8, (b / count) as u8)
 }
 
 /// Recognize a Tetris board from an RGB image and return a fumen field string.
@@ -175,8 +198,8 @@ pub fn recognize_field(img: &RgbImage) -> Result<String, String> {
             let x_center = ((x_left + x_right) / 2.0) as u32;
             let x_center = x_center.min(width - 1);
 
-            let pixel = img.get_pixel(x_center, y_center);
-            field.push(match_piece_color(pixel[0], pixel[1], pixel[2]));
+            let (r, g, b) = sample_cell_avg(img, x_center, y_center, 2);
+            field.push(match_piece_color(r, g, b));
         }
         if row > 0 {
             field.push('\n');
