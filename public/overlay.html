@@ -8,8 +8,8 @@
 html,body{width:100%;height:100%;overflow:hidden}
 body{cursor:crosshair;background:transparent}
 canvas{position:fixed;top:0;left:0;width:100vw;height:100vh}
-#sel{position:fixed;border:2px solid rgba(255,50,50,0.85);background:rgba(255,50,50,0.08);pointer-events:none;display:none;z-index:10}
-#close{position:fixed;top:12px;right:12px;z-index:20;width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;font:18px sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#sel{position:fixed;border:2px solid rgba(255,50,50,0.85);pointer-events:none;display:none;z-index:10}
+#close{position:fixed;top:12px;right:12px;z-index:20;width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:#fff;font:18px sans-serif;cursor:pointer}
 #close:hover{background:rgba(200,50,50,0.8)}
 </style>
 </head>
@@ -18,81 +18,33 @@ canvas{position:fixed;top:0;left:0;width:100vw;height:100vh}
 <div id="sel"></div>
 <button id="close">✕</button>
 <script>
-const c = document.getElementById('c'), ctx = c.getContext('2d');
-const sel = document.getElementById('sel');
-const invoke = window.__TAURI_INTERNALS__.invoke;
-let imgs = [], sx = 0, sy = 0, dragging = false;
+const c=document.getElementById('c'),ctx=c.getContext('2d'),sel=document.getElementById('sel');
+const invoke=window.__TAURI_INTERNALS__.invoke;
+let imgs=[],sx=0,sy=0,dragging=false;
 
-function resize() {
-  c.width = window.innerWidth;
-  c.height = window.innerHeight;
-  draw();
-}
-function draw() {
-  ctx.clearRect(0, 0, c.width, c.height);
-  for (const m of imgs) if (m.img) ctx.drawImage(m.img, m.x, m.y, m.w, m.h);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fillRect(0, 0, c.width, c.height);
+function resize(){c.width=window.innerWidth;c.height=window.innerHeight;draw()}
+function draw(){
+  ctx.clearRect(0,0,c.width,c.height);
+  for(const m of imgs)if(m.img)ctx.drawImage(m.img,m.x,m.y,m.w,m.h);
+  ctx.fillStyle='rgba(0,0,0,0.25)';ctx.fillRect(0,0,c.width,c.height);
 }
 
-async function load() {
-  try {
-    const data = await invoke('get_capture_data');
-    for (const m of data.monitors) {
-      const img = new Image();
-      img.src = m.dataUrl;
-      imgs.push({ img, x: m.x, y: m.y, w: m.width, h: m.height });
-    }
-    await Promise.all(imgs.map(m => new Promise(r => { if (m.img.complete) r(); else m.img.onload = r; })));
+(async()=>{
+  try{
+    const data=await invoke('get_capture_data');
+    for(const m of data.monitors){const img=new Image();img.src=m.dataUrl;imgs.push({img,x:m.x,y:m.y,w:m.width,h:m.height})}
+    await Promise.all(imgs.map(m=>new Promise(r=>{if(m.img.complete)r();else m.img.onload=r})));
     resize();
-    // Show info window
-    await invoke('show_info');
-  } catch (e) {
-    await invoke('set_info_text', { text: 'Error: ' + e });
-  }
-}
+  }catch(e){await invoke('close_overlay')}
+})();
 
-c.addEventListener('mousedown', e => {
-  sx = e.clientX; sy = e.clientY;
-  dragging = true;
-  sel.style.display = 'block';
-  sel.style.left = sx+'px'; sel.style.top = sy+'px';
-  sel.style.width = '0px'; sel.style.height = '0px';
-  invoke('set_info_text', { text: 'Release to capture' });
-});
-
-c.addEventListener('mousemove', e => {
-  if (!dragging) return;
-  const x = Math.min(sx, e.clientX), y = Math.min(sy, e.clientY);
-  const w = Math.abs(e.clientX - sx), h = Math.abs(e.clientY - sy);
-  sel.style.left = x+'px'; sel.style.top = y+'px';
-  sel.style.width = w+'px'; sel.style.height = h+'px';
-});
-
-c.addEventListener('mouseup', async e => {
-  if (!dragging) return;
-  dragging = false; sel.style.display = 'none';
-  const x = Math.min(sx, e.clientX), y = Math.min(sy, e.clientY);
-  const w = Math.abs(e.clientX - sx), h = Math.abs(e.clientY - sy);
-  if (w < 10 || h < 10) {
-    invoke('set_info_text', { text: 'Selection too small. Try again.' });
-    return;
-  }
-  await invoke('set_info_text', { text: 'Recognizing...' });
-  try {
-    await invoke('crop_and_recognize', { x, y, w, h });
-    await invoke('close_overlay');
-  } catch (err) {
-    await invoke('set_info_text', { text: 'Error: ' + err });
-  }
-});
-
-document.addEventListener('keydown', async e => {
-  if (e.key === 'Escape') await invoke('close_overlay');
-});
-document.getElementById('close').onclick = async () => await invoke('close_overlay');
-window.addEventListener('resize', resize);
-load();
+c.addEventListener('mousedown',e=>{sx=e.clientX;sy=e.clientY;dragging=true;sel.style.display='block';sel.style.left=sx+'px';sel.style.top=sy+'px';sel.style.width='0px';sel.style.height='0px'});
+c.addEventListener('mousemove',e=>{if(!dragging)return;const x=Math.min(sx,e.clientX),y=Math.min(sy,e.clientY),w=Math.abs(e.clientX-sx),h=Math.abs(e.clientY-sy);sel.style.left=x+'px';sel.style.top=y+'px';sel.style.width=w+'px';sel.style.height=h+'px'});
+c.addEventListener('mouseup',async e=>{if(!dragging)return;dragging=false;sel.style.display='none';const x=Math.min(sx,e.clientX),y=Math.min(sy,e.clientY),w=Math.abs(e.clientX-sx),h=Math.abs(e.clientY-sy);if(w<10||h<10){await invoke('close_overlay');return}
+try{await invoke('crop_and_recognize',{x,y,w,h});await invoke('close_overlay')}catch(err){await invoke('close_overlay')}});
+document.addEventListener('keydown',async e=>{if(e.key==='Escape')await invoke('close_overlay')});
+document.getElementById('close').onclick=async()=>await invoke('close_overlay');
+window.addEventListener('resize',resize);
 </script>
 </body>
 </html>

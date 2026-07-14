@@ -26,9 +26,6 @@ pub fn run() {
             commands::get_capture_data,
             commands::crop_and_recognize,
             commands::close_overlay,
-            commands::show_info,
-            commands::set_info_text,
-            commands::get_info_text,
             color_split::auto_split_field,
         ])
         .run(tauri::generate_context!())

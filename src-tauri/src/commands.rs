@@ -285,11 +285,6 @@ pub async fn crop_and_recognize(
     // Emit event so the main window can pick up the result
     let _ = app.emit("screenshot-result", &result);
 
-    // Close info window
-    if let Some(info) = app.get_webview_window("capture-info") {
-        let _ = info.close();
-    }
-
     // Restore main window
     if let Some(main) = app.get_webview_window("main") {
         let _ = main.unminimize();
@@ -310,53 +305,9 @@ pub async fn close_overlay(app: tauri::AppHandle) -> Result<(), String> {
         let _ = main.unminimize();
         let _ = main.set_focus();
     }
-    // Close info window
-    if let Some(info) = app.get_webview_window("capture-info") {
-        let _ = info.close();
-    }
     if let Some(window) = app.get_webview_window("capture-overlay") {
         window.close().map_err(|e| e.to_string())
     } else {
         Ok(())
     }
-}
-
-/// Show the info window at the bottom center of the primary monitor.
-#[tauri::command]
-pub async fn show_info(app: tauri::AppHandle) -> Result<(), String> {
-    // Close existing info window if any
-    if let Some(old) = app.get_webview_window("capture-info") {
-        let _ = old.close();
-    }
-
-    // Get primary monitor info from captured data
-    let (mx, my, mw, _mh) = crate::recognition::get_primary_monitor();
-
-    let _ = WebviewWindowBuilder::new(
-        &app,
-        "capture-info",
-        tauri::WebviewUrl::App("info.html".into()),
-    )
-    .title("")
-    .decorations(false)
-    .position((mx as f64) + (mw as f64 / 2.0) - 200.0, (my as f64) + 60.0)
-    .inner_size(420.0, 36.0)
-    .always_on_top(true)
-    .skip_taskbar(true)
-    .build()
-    .map_err(|e| format!("Failed to create info window: {}", e))?;
-    Ok(())
-}
-
-/// Set the info text shown in the info window.
-#[tauri::command]
-pub async fn set_info_text(text: String) -> Result<(), String> {
-    crate::recognition::set_info_text(&text);
-    Ok(())
-}
-
-/// Get the current info text (polled by the info window).
-#[tauri::command]
-pub async fn get_info_text() -> Result<String, String> {
-    Ok(crate::recognition::get_info_text())
 }
