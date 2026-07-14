@@ -223,27 +223,19 @@ pub async fn capture_and_recognize() -> Result<String, String> {
 }
 
 /// Capture all monitors and open the overlay selection window.
-/// Minimizes the main window so it doesn't appear in the screenshot.
+/// Creates the overlay immediately; screenshots load via get_capture_data.
 #[tauri::command]
-pub async fn start_capture(app: tauri::AppHandle) -> Result<crate::recognition::CaptureData, String> {
-    let data = crate::recognition::capture_all_monitors()?;
-
+pub async fn start_capture(app: tauri::AppHandle) -> Result<(), String> {
     // Minimize main window so it's not in the screenshot
     if let Some(main) = app.get_webview_window("main") {
         let _ = main.minimize();
     }
 
-    // Calculate bounding box of all monitors for the overlay window
-    let (min_x, min_y, max_x, max_y) = data.monitors.iter().fold(
-        (i32::MAX, i32::MAX, i32::MIN, i32::MIN),
-        |(acc_min_x, acc_min_y, acc_max_x, acc_max_y), m| {
-            (acc_min_x.min(m.x), acc_min_y.min(m.y), acc_max_x.max(m.x + m.width as i32), acc_max_y.max(m.y + m.height as i32))
-        },
-    );
-    let win_w = (max_x - min_x) as u32;
-    let win_h = (max_y - min_y) as u32;
+    // Calculate a rough bounding box (just use primary screen fallback)
+    // The real capture + monitor bounds are computed lazily in get_capture_data
+    let (min_x, min_y, win_w, win_h) = get_virtual_desktop_bounds(None);
 
-    // Create overlay window spanning all monitors
+    // Create overlay window immediately — no waiting for capture
     let _ = WebviewWindowBuilder::new(
         &app,
         "capture-overlay",
@@ -259,14 +251,34 @@ pub async fn start_capture(app: tauri::AppHandle) -> Result<crate::recognition::
     .build()
     .map_err(|e| format!("Failed to create overlay window: {}", e))?;
 
-    Ok(data)
+    Ok(())
 }
 
-/// Get the stored capture data (for overlay to load after creation)
+/// Get approximate virtual desktop bounds. If no capture data yet, use default.
+fn get_virtual_desktop_bounds(
+    monitors: Option<&[crate::recognition::MonitorInfo]>,
+) -> (i32, i32, u32, u32) {
+    if let Some(data) = monitors {
+        if !data.is_empty() {
+            let (min_x, min_y, max_x, max_y) = data.iter().fold(
+                (i32::MAX, i32::MAX, i32::MIN, i32::MIN),
+                |(acc_min_x, acc_min_y, acc_max_x, acc_max_y), m| {
+                    (acc_min_x.min(m.x), acc_min_y.min(m.y), acc_max_x.max(m.x + m.width as i32), acc_max_y.max(m.y + m.height as i32))
+                },
+            );
+            return (min_x, min_y, (max_x - min_x) as u32, (max_y - min_y) as u32);
+        }
+    }
+    // Default to 1920x1080 at origin
+    (0, 0, 1920, 1080)
+}
+
+/// Get the stored capture data (trigger capture if not yet done).
+/// This is called by the overlay after it loads — so the window appears immediately.
 #[tauri::command]
 pub async fn get_capture_data() -> Result<crate::recognition::CaptureData, String> {
-    // Re-capture if not already captured
-    crate::recognition::capture_all_monitors()
+    let data = crate::recognition::capture_all_monitors()?;
+    Ok(data)
 }
 
 /// Crop and recognize a region from the captured screen data.

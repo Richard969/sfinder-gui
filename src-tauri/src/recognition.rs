@@ -1,4 +1,4 @@
-use image::{RgbImage, ImageFormat};
+use image::{RgbImage, codecs::jpeg::JpegEncoder};
 use imageproc::edges::canny;
 use imageproc::hough::{detect_lines, LineDetectionOptions};
 use screenshots::Screen;
@@ -457,8 +457,6 @@ pub fn capture_all_monitors() -> Result<CaptureData, String> {
         }
 
         // Encode as JPEG → base64 data URL (faster than PNG)
-        let img = image::RgbaImage::from_raw(w, h, rgba.clone())
-            .ok_or("Failed to create image from capture")?;
         // Convert RGBA to RGB for JPEG, at half resolution for overlay display speed
         let scale = 2u32; // downsample by 2x
         let sw = w / scale;
@@ -479,7 +477,6 @@ pub fn capture_all_monitors() -> Result<CaptureData, String> {
         // Fast JPEG at medium quality (50) — fast enough for overlay display
         let mut jpg_buf = Cursor::new(Vec::new());
         {
-            use image::codecs::jpeg::JpegEncoder;
             let mut encoder = JpegEncoder::new_with_quality(&mut jpg_buf, 50);
             encoder.encode(&rgb.as_raw(), sw, sh, image::ExtendedColorType::Rgb8)
                 .map_err(|e| format!("Failed to encode JPEG: {}", e))?;
