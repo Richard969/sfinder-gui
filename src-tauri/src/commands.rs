@@ -305,9 +305,6 @@ pub async fn crop_and_recognize(
                 let _ = main.set_focus();
             }
             let _ = app.emit("screenshot-result", &field);
-            if let Some(window) = app.get_webview_window("capture-overlay") {
-                let _ = window.close();
-            }
             Ok(field)
         }
         Err(e) => {
@@ -316,9 +313,6 @@ pub async fn crop_and_recognize(
                 let _ = main.set_focus();
             }
             let _ = app.emit("screenshot-error", &e);
-            if let Some(window) = app.get_webview_window("capture-overlay") {
-                let _ = window.close();
-            }
             Err(e)
         }
     }

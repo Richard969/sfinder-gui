@@ -42,7 +42,8 @@ document.addEventListener('mouseup',async e=>{
   const x=Math.min(sx,e.clientX),y=Math.min(sy,e.clientY),
         w=Math.abs(e.clientX-sx),h=Math.abs(e.clientY-sy);
   if(w<10||h<10){await invoke('close_overlay');return}
-  try{await invoke('crop_and_recognize',{x,y,w,h})}catch(err){await invoke('close_overlay')}
+  try{const field=await invoke('crop_and_recognize',{x,y,w,h})}catch(err){}
+  await invoke('close_overlay');
 });
 
 document.addEventListener('keydown',async e=>{
