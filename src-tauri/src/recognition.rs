@@ -476,6 +476,34 @@ pub fn clear_capture() {
     }
 }
 
+// ─── Info window state ───
+
+static INFO_TEXT: std::sync::LazyLock<Mutex<String>> =
+    std::sync::LazyLock::new(|| Mutex::new(String::new()));
+
+pub fn set_info_text(text: &str) {
+    if let Ok(mut guard) = INFO_TEXT.lock() {
+        *guard = text.to_string();
+    }
+}
+
+pub fn get_info_text() -> String {
+    INFO_TEXT.lock().map(|g| g.clone()).unwrap_or_default()
+}
+
+/// Get the bounding box of the first captured monitor (primary).
+/// Falls back to 1920x1080 at (0,0) if no capture data.
+pub fn get_primary_monitor() -> (i32, i32, u32, u32) {
+    if let Ok(guard) = CAPTURE.lock() {
+        if let Some(ref store) = *guard {
+            if let Some(((x, y), dims)) = store.dims.iter().next() {
+                return (*x, *y, dims.0, dims.1);
+            }
+        }
+    }
+    (0, 0, 1920, 1080)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

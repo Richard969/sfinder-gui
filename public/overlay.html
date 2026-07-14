@@ -2,80 +2,37 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Select Region</title>
+<title>Select</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: 100%; height: 100%; overflow: hidden; }
-body { cursor: crosshair; background: transparent; }
-
-canvas {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-}
-
-#sel {
-  position: fixed;
-  border: 2px solid rgba(255,50,50,0.85);
-  background: rgba(255,50,50,0.08);
-  pointer-events: none;
-  display: none;
-  z-index: 10;
-}
-
-#close {
-  position: fixed;
-  top: 12px; right: 12px; z-index: 20;
-  width: 32px; height: 32px; border-radius: 50%; border: none;
-  background: rgba(0,0,0,0.6); color: #fff;
-  font: 18px sans-serif; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-#close:hover { background: rgba(200,50,50,0.8); }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden}
+body{cursor:crosshair;background:transparent}
+canvas{position:fixed;top:0;left:0;width:100vw;height:100vh}
+#sel{position:fixed;border:2px solid rgba(255,50,50,0.85);background:rgba(255,50,50,0.08);pointer-events:none;display:none;z-index:10}
+#close{position:fixed;top:12px;right:12px;z-index:20;width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;font:18px sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#close:hover{background:rgba(200,50,50,0.8)}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="sel"></div>
 <button id="close">✕</button>
-
 <script>
-const c = document.getElementById('c');
-const ctx = c.getContext('2d');
+const c = document.getElementById('c'), ctx = c.getContext('2d');
 const sel = document.getElementById('sel');
 const invoke = window.__TAURI_INTERNALS__.invoke;
-
-let imgs = [];
-let sx = 0, sy = 0, dragging = false;
-let infoText = 'Drag to select the Tetris board  |  Esc to cancel';
+let imgs = [], sx = 0, sy = 0, dragging = false;
 
 function resize() {
   c.width = window.innerWidth;
   c.height = window.innerHeight;
-  drawBg();
+  draw();
 }
-
-function drawBg() {
+function draw() {
   ctx.clearRect(0, 0, c.width, c.height);
-  for (const m of imgs) {
-    if (m.img) ctx.drawImage(m.img, m.x, m.y, m.w, m.h);
-  }
+  for (const m of imgs) if (m.img) ctx.drawImage(m.img, m.x, m.y, m.w, m.h);
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.fillRect(0, 0, c.width, c.height);
-
-  // Info bar — simple fillRect, no roundRect
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  ctx.font = '13px sans-serif';
-  const tw = ctx.measureText(infoText).width;
-  const bx = (c.width - tw - 32) / 2;
-  const by = c.height - 52;
-  ctx.fillRect(bx, by, tw + 32, 32);
-  ctx.fillStyle = '#fff';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'center';
-  ctx.fillText(infoText, c.width / 2, by + 16);
 }
 
 async function load() {
@@ -86,13 +43,12 @@ async function load() {
       img.src = m.dataUrl;
       imgs.push({ img, x: m.x, y: m.y, w: m.width, h: m.height });
     }
-    await Promise.all(imgs.map(m =>
-      new Promise(res => { if (m.img.complete) res(); else m.img.onload = res; })
-    ));
+    await Promise.all(imgs.map(m => new Promise(r => { if (m.img.complete) r(); else m.img.onload = r; })));
     resize();
+    // Show info window
+    await invoke('show_info');
   } catch (e) {
-    infoText = 'Error: ' + e;
-    drawBg();
+    await invoke('set_info_text', { text: 'Error: ' + e });
   }
 }
 
@@ -100,57 +56,34 @@ c.addEventListener('mousedown', e => {
   sx = e.clientX; sy = e.clientY;
   dragging = true;
   sel.style.display = 'block';
-  sel.style.left = sx + 'px';
-  sel.style.top = sy + 'px';
-  sel.style.width = '0px';
-  sel.style.height = '0px';
+  sel.style.left = sx+'px'; sel.style.top = sy+'px';
+  sel.style.width = '0px'; sel.style.height = '0px';
+  invoke('set_info_text', { text: 'Release to capture' });
 });
 
 c.addEventListener('mousemove', e => {
   if (!dragging) return;
-  const x = Math.min(sx, e.clientX);
-  const y = Math.min(sy, e.clientY);
-  const w = Math.abs(e.clientX - sx);
-  const h = Math.abs(e.clientY - sy);
-  sel.style.left = x + 'px';
-  sel.style.top = y + 'px';
-  sel.style.width = w + 'px';
-  sel.style.height = h + 'px';
-  ctx.clearRect(0, c.height - 60, c.width, 60);
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  const t = `Selection: ${w} × ${h}  —  release to capture`;
-  ctx.font = '13px sans-serif';
-  const tw = ctx.measureText(t).width;
-  const bx = (c.width - tw - 32) / 2;
-  const by = c.height - 52;
-  ctx.fillRect(bx, by, tw + 32, 32);
-  ctx.fillStyle = '#fff';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'center';
-  ctx.fillText(t, c.width / 2, by + 16);
+  const x = Math.min(sx, e.clientX), y = Math.min(sy, e.clientY);
+  const w = Math.abs(e.clientX - sx), h = Math.abs(e.clientY - sy);
+  sel.style.left = x+'px'; sel.style.top = y+'px';
+  sel.style.width = w+'px'; sel.style.height = h+'px';
 });
 
 c.addEventListener('mouseup', async e => {
   if (!dragging) return;
-  dragging = false;
-  sel.style.display = 'none';
-  const x = Math.min(sx, e.clientX);
-  const y = Math.min(sy, e.clientY);
-  const w = Math.abs(e.clientX - sx);
-  const h = Math.abs(e.clientY - sy);
+  dragging = false; sel.style.display = 'none';
+  const x = Math.min(sx, e.clientX), y = Math.min(sy, e.clientY);
+  const w = Math.abs(e.clientX - sx), h = Math.abs(e.clientY - sy);
   if (w < 10 || h < 10) {
-    infoText = 'Selection too small. Try again.';
-    drawBg();
+    invoke('set_info_text', { text: 'Selection too small. Try again.' });
     return;
   }
-  infoText = 'Recognizing...';
-  drawBg();
+  await invoke('set_info_text', { text: 'Recognizing...' });
   try {
     await invoke('crop_and_recognize', { x, y, w, h });
     await invoke('close_overlay');
   } catch (err) {
-    infoText = 'Error: ' + err;
-    drawBg();
+    await invoke('set_info_text', { text: 'Error: ' + err });
   }
 });
 
