@@ -272,6 +272,7 @@ pub async fn get_capture_data() -> Result<crate::recognition::CaptureData, Strin
 /// Crop and recognize a region from the captured screen data.
 /// The overlay sends (x, y, w, h) in global screen coordinates.
 /// On success, emits "screenshot-result" event and returns the field string.
+/// On failure, emits "screenshot-error" event with the error message.
 #[tauri::command]
 pub async fn crop_and_recognize(
     app: tauri::AppHandle,
@@ -280,18 +281,26 @@ pub async fn crop_and_recognize(
     w: u32,
     h: u32,
 ) -> Result<String, String> {
-    let result = crate::recognition::crop_and_recognize(x, y, w, h)?;
-
-    // Emit event so the main window can pick up the result
-    let _ = app.emit("screenshot-result", &result);
-
-    // Restore main window
-    if let Some(main) = app.get_webview_window("main") {
-        let _ = main.unminimize();
-        let _ = main.set_focus();
+    match crate::recognition::crop_and_recognize(x, y, w, h) {
+        Ok(field) => {
+            let _ = app.emit("screenshot-result", &field);
+            // Restore main window
+            if let Some(main) = app.get_webview_window("main") {
+                let _ = main.unminimize();
+                let _ = main.set_focus();
+            }
+            Ok(field)
+        }
+        Err(e) => {
+            let _ = app.emit("screenshot-error", &e);
+            // Still restore main window
+            if let Some(main) = app.get_webview_window("main") {
+                let _ = main.unminimize();
+                let _ = main.set_focus();
+            }
+            Err(e)
+        }
     }
-
-    Ok(result)
 }
 
 /// Close the overlay window by label.

@@ -1,6 +1,6 @@
 import { useFumenStore } from '@/stores/fumenStore';
 import { Trash2, Undo2, Redo2, ArrowLeftRight, ArrowUpDown, ArrowLeft, Copy, ClipboardPaste, FilePlus, Camera } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useT } from '@/i18n/useTranslation';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -29,6 +29,15 @@ function fieldStrToFumen(fieldStr: string): string | null {
 export default function FumenToolbar() {
   const t = useT();
   const [capturing, setCapturing] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'error' | 'success' } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((msg: string, type: 'error' | 'success' = 'error') => {
+    setToast({ msg, type });
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
+  }, []);
+
   const decodeFumen = useFumenStore((s) => s.decodeFumen);
   const newFile = useFumenStore((s) => s.newFile);
   const undo = useFumenStore((s) => s.undo);
@@ -41,26 +50,38 @@ export default function FumenToolbar() {
   const undoStack = useFumenStore((s) => s.undoStack);
   const redoStack = useFumenStore((s) => s.redoStack);
 
-  // Listen for screenshot result event
+  // Listen for screenshot result → load field
   useEffect(() => {
     const unlisten = listen<string>('screenshot-result', (event) => {
       const fieldStr = event.payload;
       const fumen = fieldStrToFumen(fieldStr);
       if (fumen) {
         decodeFumen(fumen);
+        showToast('Field loaded from screenshot', 'success');
+      } else {
+        showToast('Recognition result could not be parsed', 'error');
       }
       setCapturing(false);
     });
     return () => { unlisten.then(fn => fn()); };
-  }, [decodeFumen]);
+  }, [decodeFumen, showToast]);
 
-  // Listen for screenshot cancel (Esc / close button)
+  // Listen for screenshot cancel (Esc / close)
   useEffect(() => {
     const unlisten = listen<string>('screenshot-cancelled', () => {
       setCapturing(false);
     });
     return () => { unlisten.then(fn => fn()); };
   }, []);
+
+  // Listen for screenshot error
+  useEffect(() => {
+    const unlisten = listen<string>('screenshot-error', (event) => {
+      showToast(event.payload || 'Screenshot recognition failed', 'error');
+      setCapturing(false);
+    });
+    return () => { unlisten.then(fn => fn()); };
+  }, [showToast]);
 
   const handleCopy = useCallback(async () => {
     try { await navigator.clipboard.writeText(fumenString); } catch { }
@@ -80,8 +101,9 @@ export default function FumenToolbar() {
     } catch (err) {
       console.error('Screenshot capture failed:', err);
       setCapturing(false);
+      showToast(String(err), 'error');
     }
-  }, []);
+  }, [showToast]);
 
   const actions = [
     { icon: FilePlus, label: t('editor.new'), onClick: newFile },
@@ -102,38 +124,59 @@ export default function FumenToolbar() {
   ];
 
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1.5">
-      {actions.map((action, i) => {
-        if ('type' in action && action.type === 'separator') {
-          return <div key={i} className="w-px h-6 bg-border mx-1" />;
-        }
-        const { icon: Icon, label, onClick, disabled, danger } = action as {
-          icon: typeof Trash2;
-          label: string;
-          onClick: () => void;
-          disabled?: boolean;
-          danger?: boolean;
-        };
-        return (
-          <button
-            key={label}
-            onClick={onClick}
-            disabled={disabled || capturing}
-            title={label}
-            className={`
-              flex items-center justify-center h-8 w-8 rounded-md text-xs transition-colors
-              ${disabled || capturing
-                ? capturing ? 'animate-pulse text-primary' : 'text-muted-foreground/30 cursor-not-allowed'
-                : danger
-                  ? 'text-muted-foreground hover:bg-red-500/15 hover:text-red-400'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-              }
-            `}
-          >
-            <Icon className="h-4 w-4" />
-          </button>
-        );
-      })}
-    </div>
+    <>
+      <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1.5 shadow-sm">
+        {actions.map((action, i) => {
+          if ('type' in action && action.type === 'separator') {
+            return <div key={i} className="w-px h-6 bg-border mx-1" />;
+          }
+          const { icon: Icon, label, onClick, disabled, danger } = action as {
+            icon: typeof Trash2;
+            label: string;
+            onClick: () => void;
+            disabled?: boolean;
+            danger?: boolean;
+          };
+          const isScreenshot = label === 'Screenshot';
+          return (
+            <button
+              key={label}
+              onClick={onClick}
+              disabled={disabled || capturing}
+              title={label}
+              className={`
+                flex items-center justify-center h-8 w-8 rounded-md text-xs transition-colors shrink-0
+                ${disabled || capturing
+                  ? isScreenshot && capturing
+                    ? 'animate-pulse text-primary'
+                    : 'text-muted-foreground/30 cursor-not-allowed'
+                  : danger
+                    ? 'text-muted-foreground hover:bg-red-500/15 hover:text-red-400'
+                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }
+              `}
+            >
+              <Icon className="h-4 w-4" />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`
+            fixed bottom-4 right-4 z-50 px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium
+            transition-all duration-300
+            ${toast.type === 'error'
+              ? 'bg-red-500/90 text-white border border-red-400/30'
+              : 'bg-green-500/90 text-white border border-green-400/30'
+            }
+          `}
+        >
+          {toast.msg}
+        </div>
+      )}
+    </>
   );
 }

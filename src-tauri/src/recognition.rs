@@ -456,14 +456,25 @@ pub fn capture_all_monitors() -> Result<CaptureData, String> {
             rgba.push(chunk[3]); // A
         }
 
-        // Encode as PNG → base64 data URL
+        // Encode as JPEG → base64 data URL (faster than PNG)
         let img = image::RgbaImage::from_raw(w, h, rgba.clone())
             .ok_or("Failed to create image from capture")?;
-        let mut png_buf = Cursor::new(Vec::new());
-        img.write_to(&mut png_buf, ImageFormat::Png)
-            .map_err(|e| format!("Failed to encode PNG: {}", e))?;
-        let b64 = base64::engine::general_purpose::STANDARD.encode(png_buf.into_inner());
-        let data_url = format!("data:image/png;base64,{}", b64);
+        // Convert RGBA to RGB for JPEG
+        let rgb = image::RgbImage::from_raw(w, h, {
+            let mut rgb_data = Vec::with_capacity((w * h * 3) as usize);
+            for px in rgba.chunks(4) {
+                rgb_data.push(px[0]);
+                rgb_data.push(px[1]);
+                rgb_data.push(px[2]);
+            }
+            rgb_data
+        }).ok_or("Failed to create RGB image")?;
+
+        let mut jpg_buf = Cursor::new(Vec::new());
+        rgb.write_to(&mut jpg_buf, ImageFormat::Jpeg)
+            .map_err(|e| format!("Failed to encode JPEG: {}", e))?;
+        let b64 = base64::engine::general_purpose::STANDARD.encode(jpg_buf.into_inner());
+        let data_url = format!("data:image/jpeg;base64,{}", b64);
 
         monitors.push(MonitorInfo {
             data_url,
