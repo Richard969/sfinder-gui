@@ -284,6 +284,13 @@ pub async fn crop_and_recognize(
     w: u32,
     h: u32,
 ) -> Result<String, String> {
+    // Close overlay first so it doesn't appear in the screenshot
+    if let Some(window) = app.get_webview_window("capture-overlay") {
+        let _ = window.close();
+    }
+    // Brief delay to ensure the window is gone before DXGI capture
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
     // Re-capture now so the screenshot matches what the user sees
     crate::recognition::capture_all_monitors()?;
 
