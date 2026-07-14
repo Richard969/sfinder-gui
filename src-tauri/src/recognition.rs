@@ -1,6 +1,7 @@
 use image::RgbImage;
 use imageproc::edges::canny;
 use imageproc::hough::{detect_lines, LineDetectionOptions};
+use screenshots::Screen;
 
 /// Standard Tetris piece reference colors (R, G, B) in sRGB
 /// These are the canonical colors from the Tetris guideline
@@ -336,6 +337,26 @@ pub fn recognize_field_from_bytes(bytes: &[u8]) -> Result<String, String> {
         .map_err(|e| format!("Failed to decode image: {}", e))?
         .to_rgb8();
     recognize_field(&img)
+}
+
+/// Capture the entire primary screen and recognize the Tetris board
+pub fn capture_and_recognize() -> Result<String, String> {
+    let screens = Screen::all().map_err(|e| format!("Failed to access screens: {}", e))?;
+    let screen = screens.first().ok_or("No screens found")?;
+    let capture = screen
+        .capture()
+        .map_err(|e| format!("Failed to capture screen: {}", e))?;
+
+    let width = capture.width() as u32;
+    let height = capture.height() as u32;
+
+    // screenshots crate returns BGRA pixels
+    let rgb = RgbImage::from_fn(width, height, |x, y| {
+        let idx = ((y * width + x) * 4) as usize;
+        image::Rgb([capture.bytes()[idx + 2], capture.bytes()[idx + 1], capture.bytes()[idx]])
+    });
+
+    recognize_field(&rgb)
 }
 
 #[cfg(test)]

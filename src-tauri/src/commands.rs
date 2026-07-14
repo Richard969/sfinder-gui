@@ -210,3 +210,48 @@ pub async fn recognize_field_from_path(path: String) -> Result<String, String> {
 pub async fn recognize_field_from_bytes(bytes: Vec<u8>) -> Result<String, String> {
     crate::recognition::recognize_field_from_bytes(&bytes)
 }
+
+/// Capture a screen region and recognize the Tetris board in one shot.
+/// Tries multiple screenshot tools in order, then runs recognition.
+#[tauri::command]
+pub async fn capture_and_recognize(app: AppHandle) -> Result<String, String> {
+    let tmp_dir = std::env::temp_dir();
+    let output = tmp_dir.join("sfinder_screenshot.png");
+    let output_str = output.to_string_lossy().to_string();
+
+    // Try screenshot tools in order of preference
+    let tools: &[&[&str]] = &[
+        &["gnome-screenshot", "-a", "-f", &output_str],
+        &["flameshot", "screen", "-r", "-p", &output_str],
+        &["import", &output_str],  // ImageMagick
+        &["spectacle", "-b", "-r", "-o", &output_str],  // KDE
+        &["xfce4-screenshooter", "-r", "-s", &output_str],  // XFCE
+    ];
+
+    let mut captured = false;
+    for tool_args in tools {
+        let result = std::process::Command::new(tool_args[0])
+            .args(&tool_args[1..])
+            .output();
+        if let Ok(status) = result {
+            if status.status.success() && output.exists() {
+                captured = true;
+                break;
+            }
+        }
+    }
+
+    if !captured {
+        return Err(
+            "No screenshot tool found. Install gnome-screenshot, flameshot, or ImageMagick."
+                .to_string(),
+        );
+    }
+
+    let result = crate::recognition::recognize_field_from_file(&output_str)?;
+
+    // Clean up
+    let _ = std::fs::remove_file(&output);
+
+    Ok(result)
+}

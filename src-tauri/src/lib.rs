@@ -21,6 +21,7 @@ pub fn run() {
             commands::get_bundled_jar,
             commands::recognize_field_from_path,
             commands::recognize_field_from_bytes,
+            commands::capture_and_recognize,
             color_split::auto_split_field,
         ])
         .run(tauri::generate_context!())

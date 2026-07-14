@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ImageUp, ClipboardPaste, Scan, AlertCircle, ArrowRight } from 'lucide-react';
+import { ImageUp, ClipboardPaste, Camera, Scan, AlertCircle, ArrowRight } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useNavigate } from 'react-router-dom';
@@ -97,6 +97,21 @@ export default function RecognizePage() {
     }
   }, []);
 
+  const handleCapture = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setFieldStr(null);
+    try {
+      const result = await invoke<string>('capture_and_recognize');
+      setFieldStr(result);
+      setFieldLines(result.split('\n').filter(Boolean));
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const handleRecognize = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -148,6 +163,14 @@ export default function RecognizePage() {
         >
           <ImageUp className="h-3.5 w-3.5" />
           Open Screenshot
+        </button>
+        <button
+          onClick={handleCapture}
+          disabled={loading}
+          className="flex items-center gap-1.5 rounded-md bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
+        >
+          <Camera className={`h-3.5 w-3.5 ${loading ? 'animate-pulse' : ''}`} />
+          Capture Screen
         </button>
         <div className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground">
           <ClipboardPaste className="h-3.5 w-3.5" />
