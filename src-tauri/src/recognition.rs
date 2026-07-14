@@ -40,7 +40,7 @@ const COLOR_DISTANCE_THRESHOLD: f64 = 100.0;
 const NUM_COLS: usize = 10;
 
 /// Expected minimum number of rows
-const NUM_ROWS_MIN: usize = 4;
+const NUM_ROWS_MIN: usize = 1;
 
 /// Detect grid lines from edge image and classify into vertical/horizontal groups
 fn find_grid_lines(

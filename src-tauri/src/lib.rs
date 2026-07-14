@@ -1,7 +1,7 @@
 mod color_split;
 mod commands;
 mod kick_table;
-mod recognition;
+pub mod recognition;
 mod sfinder;
 
 use sfinder::CommandState;

@@ -9,141 +9,166 @@
 html, body { width: 100%; height: 100%; overflow: hidden; }
 body { cursor: crosshair; background: transparent; }
 
-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
-
-#sel {
+canvas {
   position: fixed;
-  border: 2px solid rgba(255,50,50,0.85);
-  background: rgba(255,50,50,0.08);
-  pointer-events: none;
-  display: none;
-  z-index: 10;
-}
-
-#info {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  background: rgba(0,0,0,0.7); color: #fff;
-  padding: 8px 16px; border-radius: 6px; font: 13px monospace;
-  z-index: 20; pointer-events: none; user-select: none;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
 }
 
 #close {
-  position: fixed; top: 12px; right: 12px; z-index: 20;
+  position: fixed;
+  top: 12px; right: 12px; z-index: 20;
   width: 32px; height: 32px; border-radius: 50%; border: none;
-  background: rgba(0,0,0,0.6); color: #fff; font: 18px sans-serif;
-  cursor: pointer;
+  background: rgba(0,0,0,0.6); color: #fff;
+  font: 18px sans-serif; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
 }
 #close:hover { background: rgba(200,50,50,0.8); }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="sel"></div>
-<div id="info">Drag to select the Tetris board &nbsp;|&nbsp; Esc to cancel</div>
 <button id="close">✕</button>
 
 <script>
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const sel = document.getElementById('sel');
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
 const invoke = window.__TAURI_INTERNALS__.invoke;
 
 let imgs = [];
 let sx = 0, sy = 0, dragging = false;
+let infoText = 'Drag to select the Tetris board  |  Esc to cancel';
 
 function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  c.width = window.innerWidth;
+  c.height = window.innerHeight;
   redraw();
 }
 
 function redraw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0, 0, c.width, c.height);
+
+  // Draw all monitor screenshots
   for (const m of imgs) {
-    ctx.drawImage(m.img, m.x, m.y, m.w, m.h);
+    if (m.img) ctx.drawImage(m.img, m.x, m.y, m.w, m.h);
   }
+
+  // Darken overlay
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  if (dragging || sel.style.display === 'block') {
-    // Clear dark overlay over selection area
-    const r = sel.getBoundingClientRect();
-    ctx.clearRect(r.left, r.top, r.width, r.height);
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  // Info bar — rendered on canvas at bottom-center
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  const barH = 36, barPad = 16;
+  ctx.font = '13px monospace';
+  const txtW = ctx.measureText(infoText).width;
+  const barW = txtW + barPad * 2;
+  const bx = (c.width - barW) / 2;
+  const by = c.height - barH - 16;
+  const r = 6;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, barW, barH, r);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText(infoText, c.width / 2, by + barH / 2);
+
+  // Clear dark overlay over selection area
+  if (dragging || document.getElementById('sel')) {
+    // Selection is drawn on-the-fly, no CSS element
   }
 }
 
 async function load() {
   try {
     const data = await invoke('get_capture_data');
-    let loaded = 0;
-    for (const m of data.monitors) {
-      const img = new Image();
-      img.onload = () => {
-        m.img = img;
-        loaded++;
-        if (loaded === data.monitors.length) resize();
-      };
-      img.src = m.dataUrl;
-      imgs.push({ img: null, x: m.x, y: m.y, w: m.width, h: m.height, src: m.dataUrl });
-    }
-    // Reset imgs with proper img references
-    imgs = [];
     for (const m of data.monitors) {
       const img = new Image();
       img.src = m.dataUrl;
       imgs.push({ img, x: m.x, y: m.y, w: m.width, h: m.height });
     }
-    // Wait for all images to load
-    await Promise.all(imgs.map(m => new Promise(res => { if (m.img.complete) res(); else m.img.onload = res; })));
+    await Promise.all(imgs.map(m =>
+      new Promise(res => { if (m.img.complete) res(); else m.img.onload = res; })
+    ));
     resize();
   } catch (e) {
-    document.getElementById('info').textContent = 'Error: ' + e;
+    infoText = 'Error: ' + e;
+    resize();
   }
 }
 
-canvas.addEventListener('mousedown', e => {
+c.addEventListener('mousedown', e => {
   sx = e.clientX; sy = e.clientY;
   dragging = true;
-  sel.style.display = 'block';
-  sel.style.left = sx+'px'; sel.style.top = sy+'px';
-  sel.style.width = '0px'; sel.style.height = '0px';
 });
 
-canvas.addEventListener('mousemove', e => {
+c.addEventListener('mousemove', e => {
   if (!dragging) return;
   const x = Math.min(sx, e.clientX), y = Math.min(sy, e.clientY);
   const w = Math.abs(e.clientX - sx), h = Math.abs(e.clientY - sy);
-  sel.style.left = x+'px'; sel.style.top = y+'px';
-  sel.style.width = w+'px'; sel.style.height = h+'px';
   redraw();
-  document.getElementById('info').textContent = `Selection: ${w}×${h} — release to capture`;
+  // Draw selection rectangle
+  ctx.strokeStyle = 'rgba(255,50,50,0.85)';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = 'rgba(255,50,50,0.08)';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeRect(x, y, w, h);
+  infoText = `Selection: ${w} × ${h}  —  release to capture`;
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  const barH = 36, barPad = 16;
+  ctx.font = '13px monospace';
+  const txtW = ctx.measureText(infoText).width;
+  const barW = txtW + barPad * 2;
+  const bx = (c.width - barW) / 2;
+  const by = c.height - barH - 16;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, barW, barH, 6);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText(infoText, c.width / 2, by + barH / 2);
 });
 
-canvas.addEventListener('mouseup', async e => {
+c.addEventListener('mouseup', async e => {
   if (!dragging) return;
   dragging = false;
   const x = Math.min(sx, e.clientX), y = Math.min(sy, e.clientY);
   const w = Math.abs(e.clientX - sx), h = Math.abs(e.clientY - sy);
-  if (w < 20 || h < 20) {
-    sel.style.display = 'none';
-    document.getElementById('info').textContent = 'Selection too small. Drag again.';
+  if (w < 10 || h < 10) {
+    infoText = 'Selection too small. Drag again.';
     redraw();
     return;
   }
-  document.getElementById('info').textContent = 'Recognizing...';
+  infoText = 'Recognizing...';
+  redraw();
   try {
     await invoke('crop_and_recognize', { x, y, w, h });
     await invoke('close_overlay');
   } catch (err) {
-    document.getElementById('info').textContent = 'Error: ' + err;
+    infoText = 'Error: ' + err;
+    redraw();
   }
 });
 
 document.addEventListener('keydown', async e => {
   if (e.key === 'Escape') await invoke('close_overlay');
 });
+
 document.getElementById('close').onclick = async () => await invoke('close_overlay');
 window.addEventListener('resize', resize);
-load();
+
+// Minimize main window and start
+(async () => {
+  try {
+    const main = await import('@tauri-apps/api/window');
+    const win = main.getCurrentWindow();
+    // Can't easily minimize main from here, so just load
+  } catch {}
+  load();
+})();
 </script>
 </body>
 </html>
