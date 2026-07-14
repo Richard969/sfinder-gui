@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri::WebviewWindowBuilder;
 use tauri_plugin_shell::ShellExt;
+use screenshots::Screen;
 use crate::sfinder::{self, CommandState};
 
 // --- Type definitions ---
@@ -231,11 +232,22 @@ pub async fn start_capture(app: tauri::AppHandle) -> Result<(), String> {
         let _ = main.minimize();
     }
 
-    // Calculate a rough bounding box (just use primary screen fallback)
-    // The real capture + monitor bounds are computed lazily in get_capture_data
-    let (min_x, min_y, win_w, win_h) = get_virtual_desktop_bounds(None);
+    // List screens to calculate virtual desktop bounds (no pixel capture yet)
+    let screens = Screen::all().map_err(|e| format!("Failed to list screens: {}", e))?;
+    let (min_x, min_y, max_x, max_y) = screens.iter().fold(
+        (i32::MAX, i32::MAX, i32::MIN, i32::MIN),
+        |(mx, my, Mx, My), s| {
+            let info = s.display_info;
+            (mx.min(info.x), my.min(info.y), Mx.max(info.x + info.width as i32), My.max(info.y + info.height as i32))
+        },
+    );
+    let (win_w, win_h) = if min_x <= max_x {
+        ((max_x - min_x) as u32, (max_y - min_y) as u32)
+    } else {
+        (1920, 1080)
+    };
 
-    // Create overlay window immediately — no waiting for capture
+    // Create overlay window spanning all monitors
     let _ = WebviewWindowBuilder::new(
         &app,
         "capture-overlay",
