@@ -459,33 +459,45 @@ pub fn capture_all_monitors() -> Result<CaptureData, String> {
         // Encode as JPEG → base64 data URL (faster than PNG)
         let img = image::RgbaImage::from_raw(w, h, rgba.clone())
             .ok_or("Failed to create image from capture")?;
-        // Convert RGBA to RGB for JPEG
-        let rgb = image::RgbImage::from_raw(w, h, {
-            let mut rgb_data = Vec::with_capacity((w * h * 3) as usize);
-            for px in rgba.chunks(4) {
-                rgb_data.push(px[0]);
-                rgb_data.push(px[1]);
-                rgb_data.push(px[2]);
+        // Convert RGBA to RGB for JPEG, at half resolution for overlay display speed
+        let scale = 2u32; // downsample by 2x
+        let sw = w / scale;
+        let sh = h / scale;
+        let mut rgb_data = Vec::with_capacity((sw * sh * 3) as usize);
+        for row in 0..sh {
+            for col in 0..sw {
+                let idx = ((row * scale * w + col * scale) * 4) as usize;
+                rgb_data.push(rgba[idx]);     // R
+                rgb_data.push(rgba[idx + 1]); // G
+                rgb_data.push(rgba[idx + 2]); // B
             }
-            rgb_data
-        }).ok_or("Failed to create RGB image")?;
+        }
 
+        let rgb = image::RgbImage::from_raw(sw, sh, rgb_data)
+            .ok_or("Failed to create RGB image")?;
+
+        // Fast JPEG at medium quality (50) — fast enough for overlay display
         let mut jpg_buf = Cursor::new(Vec::new());
-        rgb.write_to(&mut jpg_buf, ImageFormat::Jpeg)
-            .map_err(|e| format!("Failed to encode JPEG: {}", e))?;
+        {
+            use image::codecs::jpeg::JpegEncoder;
+            let mut encoder = JpegEncoder::new_with_quality(&mut jpg_buf, 50);
+            encoder.encode(&rgb.as_raw(), sw, sh, image::ExtendedColorType::Rgb8)
+                .map_err(|e| format!("Failed to encode JPEG: {}", e))?;
+        }
         let b64 = base64::engine::general_purpose::STANDARD.encode(jpg_buf.into_inner());
         let data_url = format!("data:image/jpeg;base64,{}", b64);
 
+        // Store full-resolution raw RGBA for crop recognition (unscaled)
+        store.images.insert((x, y), rgba);
+        store.dims.insert((x, y), (w, h));
+
         monitors.push(MonitorInfo {
             data_url,
-            width: w,
-            height: h,
+            width: sw,
+            height: sh,
             x,
             y,
         });
-
-        store.images.insert((x, y), rgba);
-        store.dims.insert((x, y), (w, h));
     }
 
     *CAPTURE.lock().map_err(|e| e.to_string())? = Some(store);
