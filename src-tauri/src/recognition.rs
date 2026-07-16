@@ -241,8 +241,28 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
             let x_center = ((x_left + x_right) / 2.0) as u32;
             let x_center = x_center.min(width - 1);
 
-            let px = img.get_pixel(x_center, y_center);
-            let (r, g, b) = (px[0], px[1], px[2]);
+            // 5x5 region averaging to reduce JPEG noise
+            let block_size = (cell_w / 4.0) as u32;
+            let x0 = x_center.saturating_sub(block_size);
+            let y0 = y_center.saturating_sub(block_size);
+            let x1 = (x_center + block_size).min(width - 1);
+            let y1 = (y_center + block_size).min(height - 1);
+            let mut r_sum = 0u64;
+            let mut g_sum = 0u64;
+            let mut b_sum = 0u64;
+            let mut count = 0u64;
+            for py in y0..=y1 {
+                for px in x0..=x1 {
+                    let px2 = img.get_pixel(px, py);
+                    r_sum += px2[0] as u64;
+                    g_sum += px2[1] as u64;
+                    b_sum += px2[2] as u64;
+                    count += 1;
+                }
+            }
+            let r = (r_sum / count) as u8;
+            let g = (g_sum / count) as u8;
+            let b = (b_sum / count) as u8;
             let ch = match_piece_color(r, g, b);
             line.push(ch);
 
@@ -253,7 +273,6 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
         }
         raw_lines.push(line);
     }
-
     // Trim leading/trailing empty rows
     let mut start = 0;
     while start < raw_lines.len() && raw_lines[start].chars().all(|c| c == '_') {
