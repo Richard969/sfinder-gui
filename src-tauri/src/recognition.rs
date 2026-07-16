@@ -5,74 +5,108 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use base64::Engine;
 use serde::Serialize;
-/// Tetr.io piece reference colors (R, G, B) — user-provided skin values
-const REFERENCE_COLORS: &[(u8, u8, u8, char)] = &[
-    (52, 181, 133, 'I'),  // 34b585 cyan/teal
-    (179, 153, 50, 'O'),  // b39932 yellow/gold
-    (164, 62, 154, 'T'),  // a43e9a purple/magenta
-    (131, 179, 50, 'S'),  // 83b332 green/lime
-    (180, 52, 59, 'Z'),   // b4343b red
-    (79, 62, 164, 'J'),   // 4f3ea4 blue
-    (178, 98, 49, 'L'),   // b26231 orange/brown
-    (128, 128, 128, 'X'), // garbage
-];
 
 /// Expected number of columns in a Tetris board
 const NUM_COLS: usize = 10;
 
-/// Detect grid cell period by saturation analysis on a-scanline.
-/// Background = low-saturation dark; blocks = high-saturation.
-/// Returns (content_width, gap_width) median values → period = content + gap.
-fn detect_cell_period(img: &RgbImage) -> (f64, f64) {
+/// Detect grid cell width by finding vertical edges of blocks.
+/// Scans multiple rows for low→high saturation transitions,
+/// groups them, returns the most common gap = cell period.
+fn detect_cell_width(img: &RgbImage) -> f64 {
     let (width, height) = img.dimensions();
     if width < 10 || height < 10 {
-        return (10.0, 0.0);
+        return width as f64 / 10.0;
     }
 
-    let y = height / 2;
+    // Scan multiple rows for low→high saturation transitions (= left edges of blocks)
+    let sample_ys = [height / 4, height / 2, 3 * height / 4];
+    let mut all_edges: Vec<u32> = Vec::new();
 
-    // Classify each pixel as high-color or not
-    let flags: Vec<bool> = (0..width)
-        .map(|x| {
+    for &y in &sample_ys {
+        let mut prev_high = false;
+        let mut edges: Vec<u32> = Vec::new();
+        for x in 0..width {
             let px = img.get_pixel(x, y);
             let (_, s, l) = rgb_to_hsl(px[0], px[1], px[2]);
-            s > 25.0 && l > 15.0
+            let is_high = s > 20.0 && l > 15.0;
+            // Detect transition: low → high = left edge of a block
+            if is_high && !prev_high {
+                edges.push(x);
+            }
+            prev_high = is_high;
+        }
+        all_edges.extend(edges);
+    }
+
+    if all_edges.len() < 20 {
+        // Not enough data — fallback
+        return width as f64 / 10.0;
+    }
+
+    // Group edges by approximate x position (within 5px tolerance)
+    all_edges.sort();
+    let mut groups: Vec<Vec<u32>> = Vec::new();
+    for &edge in &all_edges {
+        if let Some(last_group) = groups.last_mut() {
+            let avg = last_group.iter().sum::<u32>() / last_group.len() as u32;
+            if (edge as i32 - avg as i32).abs() <= 5 {
+                last_group.push(edge);
+                continue;
+            }
+        }
+        groups.push(vec![edge]);
+    }
+
+    // Need at least 10 distinct x positions (for 10 columns)
+    if groups.len() < 8 {
+        return width as f64 / 10.0;
+    }
+
+    // Compute representative x for each group (median)
+    let mut group_x: Vec<u32> = groups
+        .iter()
+        .map(|g| {
+            let mut sorted = g.clone();
+            sorted.sort();
+            sorted[sorted.len() / 2]
         })
         .collect();
+    group_x.sort_unstable();
 
-    // Measure runs of true (content) and false (gap)
-    let mut content_runs: Vec<usize> = Vec::new();
-    let mut gap_runs: Vec<usize> = Vec::new();
-    let mut i = 0;
-    while i < flags.len() {
-        let is_content = flags[i];
-        let start = i;
-        while i < flags.len() && flags[i] == is_content {
-            i += 1;
+    // Compute gaps between consecutive x positions (cell periods)
+    let gaps: Vec<u32> = group_x.windows(2).map(|w| w[1] - w[0]).collect();
+    if gaps.is_empty() {
+        return width as f64 / 10.0;
+    }
+
+    // Find most common gap using histogram with ±3px tolerance
+    let mut gap_hist: Vec<(u32, usize)> = Vec::new();
+    for &gap in &gaps {
+        let mut found = false;
+        for entry in gap_hist.iter_mut() {
+            if (entry.0 as i32 - gap as i32).abs() <= 3 {
+                entry.1 += 1;
+                entry.0 = (entry.0 + gap) / 2; // moving average
+                found = true;
+                break;
+            }
         }
-        let run = i - start;
-        if is_content {
-            content_runs.push(run);
-        } else if run >= 2 {
-            gap_runs.push(run);
+        if !found {
+            gap_hist.push((gap, 1));
         }
     }
 
-    let median_content = if content_runs.is_empty() {
-        width as f64 / 10.0
-    } else {
-        content_runs.sort();
-        content_runs[content_runs.len() / 2].max(4) as f64
-    };
+    gap_hist.sort_by_key(|&(_, count)| std::cmp::Reverse(count));
 
-    let median_gap = if gap_runs.is_empty() {
-        0.0
-    } else {
-        gap_runs.sort();
-        gap_runs[gap_runs.len() / 2].max(2) as f64
-    };
+    if let Some(&(best_gap, _)) = gap_hist.first() {
+        let cell_w = best_gap.max(4) as f64;
+        // Sanity: cell shouldn't be more than 25% of width
+        if cell_w <= width as f64 * 0.25 {
+            return cell_w;
+        }
+    }
 
-    (median_content, median_gap)
+    width as f64 / 10.0
 }
 
 /// Minimum HSL lightness for a cell to be considered "not empty"
@@ -121,34 +155,50 @@ fn color_distance(c1: (u8, u8, u8), c2: (u8, u8, u8)) -> f64 {
     (2.0 * dy * dy + du * du + dv * dv).sqrt()
 }
 
-const MATCH_DISTANCE_THRESHOLD: f64 = 0.45;
-
-/// Match a pixel color to a Tetris piece type.
-/// Returns distance-weighted nearest ref color, but treats as empty if too far.
+/// Match a pixel color to a Tetris piece type using YCbCr + slope thresholds.
+/// This is the classify.js algorithm from blockfish/tetris-board-recognizer,
+/// adapted for tetr.io colors. More robust than nearest-color for bevel-shifted skins.
 fn match_piece_color(r: u8, g: u8, b: u8) -> char {
-    // Quick reject: very dark cells are empty (background)
-    let (_, _, l) = rgb_to_hsl(r, g, b);
-    if l < MIN_LIGHTNESS {
+    // Convert to linear RGB → YCbCr (BT.709)
+    let r = (r as f64 / 255.0).powf(2.2);
+    let g = (g as f64 / 255.0).powf(2.2);
+    let b = (b as f64 / 255.0).powf(2.2);
+    let y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    let cb = -0.1145721 * r - 0.3854279 * g + b / 2.0;
+    let cr = r / 2.0 - 0.4541529 * g - 0.0458471 * b;
+
+    // Black threshold: near-zero brightness → empty
+    if y < 0.06 {
         return '_';
     }
 
-    // Find nearest reference color
-    let mut best = 'X';
-    let mut best_dist = f64::MAX;
-    for &(ref_r, ref_g, ref_b, pc) in REFERENCE_COLORS {
-        let d = color_distance((r, g, b), (ref_r, ref_g, ref_b));
-        if d < best_dist {
-            best_dist = d;
-            best = pc;
+    // Grey: both chroma channels near zero → garbage
+    if cb.abs() < 0.09 && cr.abs() < 0.09 {
+        return 'X';
+    }
+
+    // YCbCr slope classification (matches blockfish algorithm, tuned for tetr.io)
+    if cb < 0.0 && cb * 0.2 < cr {
+        if cb * -3.0 < cr {
+            'Z'
+        } else if cb * -1.1 > cr {
+            'O'
+        } else {
+            'L'
+        }
+    } else if cb * -0.75 > cr {
+        if cb * 2.5 < cr {
+            'S'
+        } else {
+            'I'
+        }
+    } else {
+        if cb * 0.3 > cr {
+            'J'
+        } else {
+            'T'
         }
     }
-
-    // If too far from any reference color, treat as empty (background/grid)
-    if best_dist > MATCH_DISTANCE_THRESHOLD {
-        return '_';
-    }
-
-    best
 }
 /// Sample the average color of a small region around (cx, cy).
 /// Helps with anti-aliased edges.
@@ -189,15 +239,8 @@ pub fn recognize_field(img: &RgbImage) -> Result<String, String> {
         return Err("Image too small (minimum 10×10 pixels)".to_string());
     }
 
-    // Detect grid period using saturation analysis
-    let (content_w, gap_w) = detect_cell_period(img);
-    let period = content_w + gap_w; // Full cell = content + gap
-    // Fallback: if no gap detected or period looks wrong, use width / 10
-    let cell_w = if period >= 10.0 && period > content_w {
-        period
-    } else {
-        width as f64 / 10.0
-    };
+    // Detect grid cell period via saturation edge analysis
+    let cell_w = detect_cell_width(img);
     // Use ceil to guarantee we cover all rows, then dedup handles doubles
     let n_rows = (height as f64 / cell_w).ceil() as usize;
     let n_rows = n_rows.max(1).min(40);
