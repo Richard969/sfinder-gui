@@ -51,15 +51,8 @@ export default function FumenToolbar() {
   const redoStack = useFumenStore((s) => s.redoStack);
 
   // Listen for screenshot result → load field
-  useEffect(() => {
-    const unlisten = listen<string>('screenshot-result', (event) => {
-      const fieldStr = event.payload;
-      handleFieldStr(fieldStr);
-    });
-    return () => { unlisten.then(fn => fn()); };
-  }, [decodeFumen, showToast]);
-
-  const handleFieldStr = (fieldStr: string) => {
+  const handleFieldStr = useCallback((fieldStr: string) => {
+    console.log('[screenshot] result received, length=', fieldStr?.length, 'first 50 chars:', fieldStr?.substring(0, 50));
     const fumen = fieldStrToFumen(fieldStr);
     if (fumen) {
       decodeFumen(fumen);
@@ -68,7 +61,14 @@ export default function FumenToolbar() {
       showToast('Recognition result could not be parsed', 'error');
     }
     setCapturing(false);
-  };
+  }, [decodeFumen, showToast]);
+
+  useEffect(() => {
+    const unlisten = listen<string>('screenshot-result', (event) => {
+      handleFieldStr(event.payload);
+    });
+    return () => { unlisten.then(fn => fn()); };
+  }, [handleFieldStr]);
 
   // Listen for screenshot cancel (Esc / close)
   useEffect(() => {

@@ -294,25 +294,39 @@ pub async fn crop_and_recognize(
     w: u32,
     h: u32,
 ) -> Result<String, String> {
+    eprintln!("[overlay] crop_and_recognize: x={}, y={}, w={}, h={}", x, y, w, h);
     // Hide overlay so it doesn't appear in the screenshot (don't close — frontend needs the IPC response)
     if let Some(window) = app.get_webview_window("capture-overlay") {
         let _ = window.hide();
     }
+    eprintln!("[overlay] overlay hidden");
 
     // Re-capture now so the screenshot matches what the user sees
-    crate::recognition::capture_all_monitors()?;
+    if let Err(e) = crate::recognition::capture_all_monitors() {
+        eprintln!("[overlay] capture_all_monitors failed: {}", e);
+        // Restore window even on error
+        if let Some(main) = app.get_webview_window("main") {
+            let _ = main.unminimize();
+            let _ = main.set_focus();
+        }
+        return Err(e);
+    }
+    eprintln!("[overlay] monitors captured");
 
     match crate::recognition::crop_and_recognize(x, y, w, h) {
         Ok(field) => {
+            eprintln!("[overlay] recognition OK, {} rows", field.lines().count());
             // Restore main window and emit directly to it
             if let Some(main) = app.get_webview_window("main") {
                 let _ = main.unminimize();
                 let _ = main.set_focus();
+                eprintln!("[overlay] main window restored, emitting screenshot-result");
                 let _ = main.emit("screenshot-result", &field);
             }
             Ok(field)
         }
         Err(e) => {
+            eprintln!("[overlay] recognition error: {}", e);
             if let Some(main) = app.get_webview_window("main") {
                 let _ = main.unminimize();
                 let _ = main.set_focus();
