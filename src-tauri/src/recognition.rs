@@ -6,16 +6,17 @@ use std::sync::Mutex;
 use base64::Engine;
 use serde::Serialize;
 /// Tetr.io piece reference colors (R, G, B)
-/// Sampled from actual tetr.io client screenshots
+/// Based on reported misclassifications: O→L, L→Z, J→T
+/// Widened separation between yellow/orange, orange/red, blue/purple
 const REFERENCE_COLORS: &[(u8, u8, u8, char)] = &[
-    (60,  200, 180, 'I'),  // cyan    tetr.io actual: ~57,197,177
-    (240, 220,  90, 'O'),  // yellow  tetr.io actual: ~239,219,91
-    (120,  80, 160, 'T'),  // purple  tetr.io actual: ~118,79,159
-    (175, 215,  75, 'S'),  // green   tetr.io actual: ~174,216,73
-    (210,  70,  70, 'Z'),  // red     tetr.io actual: ~211,67,67
-    (90,  120, 200, 'J'),  // blue    tetr.io actual: ~89,119,199
-    (240, 160,  80, 'L'),  // orange  tetr.io actual: ~239,159,79
-    (128, 128, 128, 'X'),  // garbage (gray)
+    (60,  200, 180, 'I'),  // cyan
+    (255, 230,  50, 'O'),  // yellow (brighter, more saturated)
+    (120,  80, 180, 'T'),  // purple (more blue-shifted)
+    (175, 215,  75, 'S'),  // green
+    (230,  60,  60, 'Z'),  // red (more saturated)
+    (70,  100, 230, 'J'),  // blue (more saturated, brighter)
+    (255, 150,  10, 'L'),  // orange (stronger orange, less red)
+    (128, 128, 128, 'X'),  // garbage
 ];
 
 /// Expected number of columns in a Tetris board
