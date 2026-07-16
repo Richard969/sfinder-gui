@@ -168,12 +168,12 @@ fn match_piece_color(r: u8, g: u8, b: u8) -> char {
     let cr = r / 2.0 - 0.4541529 * g - 0.0458471 * b;
 
     // Black threshold: near-zero brightness → empty
-    if y < 0.06 {
+    if y < 0.02 {
         return '_';
     }
 
     // Grey: both chroma channels near zero → garbage
-    if cb.abs() < 0.09 && cr.abs() < 0.09 {
+    if cb.abs() < 0.2 && cr.abs() < 0.2 {
         return 'X';
     }
 
