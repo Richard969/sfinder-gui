@@ -165,13 +165,30 @@ const REFERENCE_COLORS: &[(u8, u8, u8, char)] = &[
 ];
 
 /// Match a pixel to a Tetris piece type.
-/// 1. YUV nearest match. If closest color is within threshold, accept it.
-/// 2. If YUV match is too far, fall back to HSL: bright→X, dark→_
+/// 1. If nearly greyscale (|R-G|<5, |G-B|<5, |R-B|<5) → garbage (X) or empty (_) by brightness.
+/// 2. YUV nearest match for saturated colors.
+/// 3. Fallback: HSL brightness.
 pub fn match_piece_color(r: u8, g: u8, b: u8) -> char {
+    // Stage 1: greyscale detection (garbage is always grey, empty is dark grey/black)
+    let rg = (r as i32 - g as i32).abs();
+    let gb = (g as i32 - b as i32).abs();
+    let rb = (r as i32 - b as i32).abs();
+    if rg < 8 && gb < 8 && rb < 8 {
+        let (_, _, l) = rgb_to_hsl(r, g, b);
+        if l > 25.0 {
+            return 'X'; // bright grey = garbage
+        }
+        return '_' ; // dark grey/black = empty
+    }
+
+    // Stage 2: YUV nearest match for saturated colors
     let (y, u, v) = rgb_to_yuv(r, g, b);
     let mut best = '_';
     let mut best_dist = f64::MAX;
     for &(ref_r, ref_g, ref_b, pc) in REFERENCE_COLORS {
+        if pc == '_' || pc == 'X' {
+            continue;
+        }
         let (ry, ru, rv) = rgb_to_yuv(ref_r, ref_g, ref_b);
         let dy = y - ry;
         let du = u - ru;
@@ -182,18 +199,16 @@ pub fn match_piece_color(r: u8, g: u8, b: u8) -> char {
             best = pc;
         }
     }
-
-    // Accept YUV match if within threshold
     if best_dist < 0.08 {
         return best;
     }
 
-    // Fallback: too far from any reference → HSL brightness
+    // Stage 3: fallback
     let (_, _, l) = rgb_to_hsl(r, g, b);
     if l > 20.0 {
-        'X' // brighter than empty → garbage
+        'X'
     } else {
-        '_' // dark → empty
+        '_'
     }
 }
 
