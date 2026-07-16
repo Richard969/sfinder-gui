@@ -153,6 +153,7 @@ fn rgb_to_yuv(r: u8, g: u8, b: u8) -> (f64, f64, f64) {
 
 /// Tetr.io piece reference colors (R, G, B).
 const REFERENCE_COLORS: &[(u8, u8, u8, char)] = &[
+    (0, 0, 0, '_'),       // empty (black background)
     (52, 181, 133, 'I'),  // teal
     (179, 153, 50, 'O'),  // yellow
     (164, 62, 154, 'T'),  // purple
@@ -163,42 +164,8 @@ const REFERENCE_COLORS: &[(u8, u8, u8, char)] = &[
     (128, 128, 128, 'X'), // garbage
 ];
 
-/// Match a pixel to a Tetris piece type.
-/// Three-stage pipeline:
-/// 1. HSL: very dark → empty (_)
-/// 2. HSL: high saturation → colored block → YUV nearest match
-/// 3. YCbCr: low chroma + moderate brightness → garbage (X), else empty
+/// Match a pixel to a Tetris piece type via YUV nearest-distance.
 pub fn match_piece_color(r: u8, g: u8, b: u8) -> char {
-    let (_, s, l) = rgb_to_hsl(r, g, b);
-
-    // Stage 1: very dark → empty cell
-    if l < 15.0 {
-        return '_';
-    }
-
-    // Stage 2: high saturation → colored block, match via YUV distance
-    if s > 25.0 {
-        return match_colored(r, g, b);
-    }
-
-    // Stage 3: low saturation → garbage or empty
-    let r_lin = (r as f64 / 255.0).powf(2.2);
-    let g_lin = (g as f64 / 255.0).powf(2.2);
-    let b_lin = (b as f64 / 255.0).powf(2.2);
-    let y_val = 0.2126 * r_lin + 0.7152 * g_lin + 0.0722 * b_lin;
-    let cb = -0.1145721 * r_lin - 0.3854279 * g_lin + b_lin / 2.0;
-    let cr = r_lin / 2.0 - 0.4541529 * g_lin - 0.0458471 * b_lin;
-
-    // Garbage: moderate brightness + low chroma
-    if y_val > 0.08 && cb.abs() < 0.2 && cr.abs() < 0.2 {
-        return 'X';
-    }
-
-    '_'
-}
-
-/// YUV nearest-distance match against tetr.io reference palette.
-fn match_colored(r: u8, g: u8, b: u8) -> char {
     let (y, u, v) = rgb_to_yuv(r, g, b);
     let mut best = '_';
     let mut best_dist = f64::MAX;
