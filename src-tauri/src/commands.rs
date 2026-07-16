@@ -268,6 +268,11 @@ pub async fn start_capture(app: tauri::AppHandle) -> Result<(), String> {
     .build()
     .map_err(|e| format!("Failed to create overlay window: {}", e))?;
 
+    // Give overlay focus so it receives mouse events immediately
+    if let Some(window) = app.get_webview_window("capture-overlay") {
+        let _ = window.set_focus();
+    }
+
     Ok(())
 }
 

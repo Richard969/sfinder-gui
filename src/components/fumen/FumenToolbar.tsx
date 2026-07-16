@@ -54,17 +54,21 @@ export default function FumenToolbar() {
   useEffect(() => {
     const unlisten = listen<string>('screenshot-result', (event) => {
       const fieldStr = event.payload;
-      const fumen = fieldStrToFumen(fieldStr);
-      if (fumen) {
-        decodeFumen(fumen);
-        showToast('Field loaded from screenshot', 'success');
-      } else {
-        showToast('Recognition result could not be parsed', 'error');
-      }
-      setCapturing(false);
+      handleFieldStr(fieldStr);
     });
     return () => { unlisten.then(fn => fn()); };
   }, [decodeFumen, showToast]);
+
+  const handleFieldStr = (fieldStr: string) => {
+    const fumen = fieldStrToFumen(fieldStr);
+    if (fumen) {
+      decodeFumen(fumen);
+      showToast('Field loaded from screenshot', 'success');
+    } else {
+      showToast('Recognition result could not be parsed', 'error');
+    }
+    setCapturing(false);
+  };
 
   // Listen for screenshot cancel (Esc / close)
   useEffect(() => {
