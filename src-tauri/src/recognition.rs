@@ -66,22 +66,18 @@ fn color_distance(c1: (u8, u8, u8), c2: (u8, u8, u8)) -> f64 {
     (2.0 * dy * dy + du * du + dv * dv).sqrt()
 }
 
-// ── Recognition ──
+const MATCH_DISTANCE_THRESHOLD: f64 = 0.45;
 
 /// Match a pixel color to a Tetris piece type.
-/// Uses YUV distance against reference colors (primary) + HSL hue check (secondary).
+/// Returns distance-weighted nearest ref color, but treats as empty if too far.
 fn match_piece_color(r: u8, g: u8, b: u8) -> char {
-    // Quick reject: very dark cells are empty
-    let (_, s, l) = rgb_to_hsl(r, g, b);
+    // Quick reject: very dark cells are empty (background)
+    let (_, _, l) = rgb_to_hsl(r, g, b);
     if l < MIN_LIGHTNESS {
         return '_';
     }
-    // Very low saturation + moderate lightness → garbage (gray)
-    if s < 12.0 && l > 30.0 {
-        return 'X';
-    }
 
-    // Nearest reference color — no distance cutoff, always classify
+    // Find nearest reference color
     let mut best = 'X';
     let mut best_dist = f64::MAX;
     for &(ref_r, ref_g, ref_b, pc) in REFERENCE_COLORS {
@@ -91,9 +87,14 @@ fn match_piece_color(r: u8, g: u8, b: u8) -> char {
             best = pc;
         }
     }
+
+    // If too far from any reference color, treat as empty (background/grid)
+    if best_dist > MATCH_DISTANCE_THRESHOLD {
+        return '_';
+    }
+
     best
 }
-
 /// Sample the average color of a small region around (cx, cy).
 /// Helps with anti-aliased edges.
 fn sample_cell_avg(img: &RgbImage, cx: u32, cy: u32, radius: u32) -> (u8, u8, u8) {
