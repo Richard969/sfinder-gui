@@ -134,12 +134,12 @@ pub fn recognize_field(img: &RgbImage) -> Result<String, String> {
         return Err("Image too small (minimum 10×10 pixels)".to_string());
     }
 
-    // Proportional grid over the full image (user selected the board area)
     let cell_w = width as f64 / NUM_COLS as f64;
-    let n_rows = (height as f64 / cell_w).ceil() as usize;
+    // Round instead of ceil to avoid extra overlapping row
+    let n_rows = (height as f64 / cell_w).round() as usize;
     let n_rows = n_rows.max(1).min(40);
 
-    let mut field = String::new();
+    let mut raw_lines: Vec<String> = Vec::new();
 
     // Scan rows bottom-to-top (fumen convention: y=0 = bottom of field)
     for row in (0..n_rows).rev() {
@@ -148,6 +148,7 @@ pub fn recognize_field(img: &RgbImage) -> Result<String, String> {
         let y_center = ((y_top + y_bot) / 2.0) as u32;
         let y_center = y_center.min(height - 1);
 
+        let mut line = String::with_capacity(NUM_COLS);
         for col in 0..NUM_COLS {
             let x_left = col as f64 * (width as f64 / NUM_COLS as f64);
             let x_right = (col + 1) as f64 * (width as f64 / NUM_COLS as f64);
@@ -157,29 +158,45 @@ pub fn recognize_field(img: &RgbImage) -> Result<String, String> {
             let px = img.get_pixel(x_center, y_center);
             let (r, g, b) = (px[0], px[1], px[2]);
             let ch = match_piece_color(r, g, b);
-            eprintln!("[recognize] row={}, col={} y_center={} rgb=({},{},{}) => '{}'", row, col, y_center, r, g, b, ch);
-            field.push(ch);
+            line.push(ch);
         }
-        if row > 0 {
-            field.push('\n');
-        }
+        raw_lines.push(line);
     }
 
     // Trim leading/trailing empty rows
-    let lines: Vec<&str> = field.lines().collect();
     let mut start = 0;
-    while start < lines.len() && lines[start].chars().all(|c| c == '_') {
+    while start < raw_lines.len() && raw_lines[start].chars().all(|c| c == '_') {
         start += 1;
     }
-    if start == lines.len() {
+    if start == raw_lines.len() {
         return Err("Board appears empty. Is the screenshot showing a Tetris field?".to_string());
     }
-    let mut end = lines.len();
-    while end > start && lines[end - 1].chars().all(|c| c == '_') {
+    let mut end = raw_lines.len();
+    while end > start && raw_lines[end - 1].chars().all(|c| c == '_') {
         end -= 1;
     }
 
-    Ok(lines[start..end].join("\n"))
+    let trimmed: Vec<&str> = raw_lines[start..end].iter().map(|s| s.as_str()).collect();
+
+    // Deduplicate: if adjacent rows are >70% similar, keep the one with more pieces
+    let mut deduped: Vec<&str> = Vec::new();
+    for line in trimmed {
+        if let Some(&last) = deduped.last() {
+            let same = line.chars().zip(last.chars()).filter(|(a, b)| a == b).count();
+            if same >= 7 {
+                let curr_pieces = line.chars().filter(|c| *c != '_').count();
+                let prev_pieces = last.chars().filter(|c| *c != '_').count();
+                if curr_pieces > prev_pieces {
+                    deduped.pop();
+                    deduped.push(line);
+                }
+                continue;
+            }
+        }
+        deduped.push(line);
+    }
+
+    Ok(deduped.join("\n"))
 }
 
 /// Load an image from file path and recognize the Tetris board.
