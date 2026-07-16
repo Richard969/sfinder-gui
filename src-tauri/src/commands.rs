@@ -316,7 +316,8 @@ pub async fn crop_and_recognize(
 
     match crate::recognition::crop_and_recognize(x, y, w, h) {
         Ok(field) => {
-            eprintln!("[overlay] recognition OK, {} rows", field.lines().count());
+            eprintln!("[overlay] recognition OK, {} rows, first line: {:?}", field.lines().count(), field.lines().next());
+            eprintln!("[overlay] full field:\n{}", field);
             if let Some(main) = app.get_webview_window("main") {
                 let _ = main.unminimize();
                 let _ = main.set_focus();

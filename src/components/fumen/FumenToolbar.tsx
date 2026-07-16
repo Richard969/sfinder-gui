@@ -10,19 +10,25 @@ const PIECE_CHARS = new Set(['I', 'O', 'T', 'S', 'Z', 'J', 'L', 'X']);
 
 function fieldStrToFumen(fieldStr: string): string | null {
   const lines = fieldStr.trim().split('\n').filter(Boolean);
-  if (lines.length === 0 || lines[0].length !== 10) return null;
+  if (lines.length === 0) return null;
+  // Pad or truncate each line to exactly 10 chars
+  const padded = lines.map(line => {
+    if (line.length < 10) return line + '_'.repeat(10 - line.length);
+    return line.substring(0, 10);
+  });
   try {
     const field = Field.create('_'.repeat(10 * 23), '_'.repeat(10));
     // lines[0] = top of image, fumen row 0 = bottom → reverse
-    for (let row = 0; row < lines.length; row++) {
-      const line = lines[row];
+    for (let row = 0; row < padded.length; row++) {
+      const line = padded[row];
       for (let col = 0; col < 10; col++) {
         const ch = line[col];
-        if (PIECE_CHARS.has(ch)) field.set(col, lines.length - 1 - row, ch as any);
+        if (PIECE_CHARS.has(ch)) field.set(col, padded.length - 1 - row, ch as any);
       }
     }
     return encoder.encode([{ field }]);
-  } catch {
+  } catch (e) {
+    console.error('[fieldStrToFumen] encode error:', e);
     return null;
   }
 }
@@ -53,12 +59,13 @@ export default function FumenToolbar() {
 
   // Listen for screenshot result → load field
   const handleFieldStr = useCallback((fieldStr: string) => {
-    console.log('[screenshot] result received, length=', fieldStr?.length, 'first 50 chars:', fieldStr?.substring(0, 50));
+    console.log('[screenshot] raw fieldStr:', JSON.stringify(fieldStr));
     const fumen = fieldStrToFumen(fieldStr);
     if (fumen) {
       decodeFumen(fumen);
       showToast('Field loaded from screenshot', 'success');
     } else {
+      console.log('[screenshot] fieldStrToFumen returned null. Lines:', fieldStr?.trim().split('\n').length, 'first line length:', fieldStr?.trim().split('\n')[0]?.length);
       showToast('Recognition result could not be parsed', 'error');
     }
     setCapturing(false);
