@@ -20,52 +20,59 @@ const REFERENCE_COLORS: &[(u8, u8, u8, char)] = &[
 /// Expected number of columns in a Tetris board
 const NUM_COLS: usize = 10;
 
-/// Detect grid cell width by finding the dominant horizontal period.
-/// Scans a 1px strip from the middle for sharp color transitions.
-fn detect_cell_width(img: &RgbImage) -> f64 {
+/// Detect grid cell period by saturation analysis on a-scanline.
+/// Background = low-saturation dark; blocks = high-saturation.
+/// Returns (content_width, gap_width) median values → period = content + gap.
+fn detect_cell_period(img: &RgbImage) -> (f64, f64) {
     let (width, height) = img.dimensions();
     if width < 10 || height < 10 {
-        return 10.0;
+        return (10.0, 0.0);
     }
 
     let y = height / 2;
-    let mut colors = Vec::with_capacity(width as usize);
-    for x in 0..width {
-        let px = img.get_pixel(x, y);
-        colors.push((px[0], px[1], px[2]));
-    }
 
-    // Find sharp transitions (grid lines)
-    let mut transitions = Vec::new();
-    for x in 1..width as usize {
-        if color_distance(colors[x - 1], colors[x]) > 0.25 {
-            transitions.push(x);
+    // Classify each pixel as high-color or not
+    let flags: Vec<bool> = (0..width)
+        .map(|x| {
+            let px = img.get_pixel(x, y);
+            let (_, s, l) = rgb_to_hsl(px[0], px[1], px[2]);
+            s > 25.0 && l > 15.0
+        })
+        .collect();
+
+    // Measure runs of true (content) and false (gap)
+    let mut content_runs: Vec<usize> = Vec::new();
+    let mut gap_runs: Vec<usize> = Vec::new();
+    let mut i = 0;
+    while i < flags.len() {
+        let is_content = flags[i];
+        let start = i;
+        while i < flags.len() && flags[i] == is_content {
+            i += 1;
+        }
+        let run = i - start;
+        if is_content {
+            content_runs.push(run);
+        } else if run >= 2 {
+            gap_runs.push(run);
         }
     }
 
-    if transitions.len() < 2 {
-        return width as f64 / 10.0;
-    }
+    let median_content = if content_runs.is_empty() {
+        width as f64 / 10.0
+    } else {
+        content_runs.sort();
+        content_runs[content_runs.len() / 2].max(4) as f64
+    };
 
-    // Compute gaps between transitions
-    let gaps: Vec<usize> = transitions.windows(2).map(|w| w[1] - w[0]).collect();
-    
-    // Cell period = sum of two consecutive gaps (cell content + grid line)
-    if gaps.len() >= 2 {
-        let mut periods: Vec<usize> = gaps.windows(2).map(|w| w[0] + w[1]).collect();
-        periods.sort();
-        if !periods.is_empty() {
-            return periods[periods.len() / 2].max(6) as f64;
-        }
-    }
+    let median_gap = if gap_runs.is_empty() {
+        0.0
+    } else {
+        gap_runs.sort();
+        gap_runs[gap_runs.len() / 2].max(2) as f64
+    };
 
-    // Fallback: median gap (might be just cell or just grid line)
-    let mut sorted_gaps = gaps;
-    sorted_gaps.sort();
-    if sorted_gaps.is_empty() {
-        return width as f64 / 10.0;
-    }
-    sorted_gaps[sorted_gaps.len() / 2].max(3) as f64
+    (median_content, median_gap)
 }
 
 /// Minimum HSL lightness for a cell to be considered "not empty"
@@ -182,10 +189,15 @@ pub fn recognize_field(img: &RgbImage) -> Result<String, String> {
         return Err("Image too small (minimum 10×10 pixels)".to_string());
     }
 
-    let cell_w = detect_cell_width(img);
-    // Clamp: cell shouldn't be more than 2x the expected (width/10)
-    let max_cell = (width as f64 / 8.0).max(10.0);
-    let cell_w = cell_w.min(max_cell);
+    // Detect grid period using saturation analysis
+    let (content_w, gap_w) = detect_cell_period(img);
+    let period = content_w + gap_w; // Full cell = content + gap
+    // Fallback: if no gap detected or period looks wrong, use width / 10
+    let cell_w = if period >= 10.0 && period > content_w {
+        period
+    } else {
+        width as f64 / 10.0
+    };
     // Use ceil to guarantee we cover all rows, then dedup handles doubles
     let n_rows = (height as f64 / cell_w).ceil() as usize;
     let n_rows = n_rows.max(1).min(40);
