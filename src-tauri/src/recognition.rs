@@ -135,8 +135,8 @@ pub fn recognize_field(img: &RgbImage) -> Result<String, String> {
     }
 
     let cell_w = width as f64 / NUM_COLS as f64;
-    // Round instead of ceil to avoid extra overlapping row
-    let n_rows = (height as f64 / cell_w).round() as usize;
+    // Use ceil to guarantee we cover all rows, then dedup handles doubles
+    let n_rows = (height as f64 / cell_w).ceil() as usize;
     let n_rows = n_rows.max(1).min(40);
 
     let mut raw_lines: Vec<String> = Vec::new();
