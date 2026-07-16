@@ -12,28 +12,43 @@ const NUM_COLS: usize = 10;
 // ── Grid detection ──
 
 /// Detect grid cell width by finding vertical edges of blocks.
-/// Scans multiple rows for low→high saturation transitions,
-/// groups them, returns the most common gap = cell period.
+/// Samples only the bottom 60% (skips active pieces at top).
+/// Uses luminance (Y) transitions since garbage blocks are grey but brighter than bg.
 fn detect_cell_width(img: &RgbImage) -> f64 {
     let (width, height) = img.dimensions();
     if width < 10 || height < 10 {
         return width as f64 / 10.0;
     }
 
-    let sample_ys = [height / 4, height / 2, 3 * height / 4];
+    // Sample rows from bottom 60% only (skip active piece area at top)
+    let y_start = height / 5;
+    let sample_ys = [
+        y_start + (height - y_start) / 4,
+        y_start + (height - y_start) / 2,
+        y_start + 3 * (height - y_start) / 4,
+    ];
     let mut all_edges: Vec<u32> = Vec::new();
 
     for &y in &sample_ys {
-        let mut prev_high = false;
+        let y = y.min(height - 1);
+        // Get baseline luminance (median of first 10 pixels)
+        let bg_lum: f64 = (0..10.min(width as usize))
+            .map(|x| {
+                let px = img.get_pixel(x as u32, y);
+                0.299 * px[0] as f64 + 0.587 * px[1] as f64 + 0.114 * px[2] as f64
+            })
+            .sum::<f64>() / 10.0_f64.min(width as f64);
+
+        let mut prev_above = false;
         let mut edges: Vec<u32> = Vec::new();
         for x in 0..width {
             let px = img.get_pixel(x, y);
-            let (_, s, l) = rgb_to_hsl(px[0], px[1], px[2]);
-            let is_high = s > 20.0 && l > 15.0;
-            if is_high && !prev_high {
+            let lum = 0.299 * px[0] as f64 + 0.587 * px[1] as f64 + 0.114 * px[2] as f64;
+            let is_above = lum > bg_lum + 15.0;
+            if is_above && !prev_above {
                 edges.push(x);
             }
-            prev_high = is_high;
+            prev_above = is_above;
         }
         all_edges.extend(edges);
     }
