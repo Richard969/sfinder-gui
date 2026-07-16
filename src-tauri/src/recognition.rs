@@ -151,17 +151,17 @@ fn rgb_to_yuv(r: u8, g: u8, b: u8) -> (f64, f64, f64) {
 
 // ── Classification ──
 
-/// Tetr.io default skin reference colors (from vision analysis of actual screenshots).
+/// Tetr.io default skin reference colors — from user's eyedropper (hex values).
 const REFERENCE_COLORS: &[(u8, u8, u8, char)] = &[
-    (0, 0, 0, '_'),         // empty (black background)
-    (0, 210, 164, 'I'),     // teal/cyan
-    (232, 215, 57, 'O'),    // yellow
-    (143, 66, 161, 'T'),    // purple
-    (73, 197, 105, 'S'),    // green
-    (201, 54, 59, 'Z'),     // red
-    (62, 94, 179, 'J'),     // blue
-    (210, 132, 53, 'L'),    // orange
-    (107, 107, 107, 'X'),   // garbage grey
+    (0, 0, 0, '_'),         // 000000 empty
+    (52, 181, 133, 'I'),    // 34b585 teal
+    (179, 153, 50, 'O'),    // b39932 yellow
+    (164, 62, 154, 'T'),    // a43e9a purple
+    (131, 179, 50, 'S'),    // 83b332 green
+    (180, 52, 59, 'Z'),     // b4343b red
+    (79, 62, 164, 'J'),     // 4f3ea4 blue
+    (178, 98, 49, 'L'),     // b26231 orange
+    (67, 67, 67, 'X'),      // 434343 garbage
 ];
 
 /// Match a pixel to a Tetris piece type.
