@@ -301,11 +301,13 @@ pub fn capture_all_monitors() -> Result<CaptureData, String> {
         let sw = w / scale;
         let sh = h / scale;
         let small = image::imageops::resize(&img, sw, sh, image::imageops::FilterType::Nearest);
+        // Convert RGBA → RGB for JPEG (JPEG doesn't support alpha)
+        let small_rgb = image::DynamicImage::ImageRgba8(small).to_rgb8();
         let mut jpg_buf = Cursor::new(Vec::new());
         {
             let mut encoder = JpegEncoder::new_with_quality(&mut jpg_buf, 50);
             encoder
-                .encode(&small.as_raw(), sw, sh, image::ExtendedColorType::Rgba8)
+                .encode(small_rgb.as_raw(), sw, sh, image::ExtendedColorType::Rgb8)
                 .map_err(|e| format!("Failed to encode JPEG: {}", e))?;
         }
         let b64 = base64::engine::general_purpose::STANDARD.encode(jpg_buf.into_inner());
