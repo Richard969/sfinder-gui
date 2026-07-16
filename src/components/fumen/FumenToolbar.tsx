@@ -18,12 +18,12 @@ function fieldStrToFumen(fieldStr: string): string | null {
   });
   try {
     const field = Field.create('_'.repeat(10 * 23), '_'.repeat(10));
-    // lines[0] = top of image, fumen row 0 = bottom → reverse
+    // lines[0] = bottom of board (recognition scans bottom-to-top) = fumen row 0
     for (let row = 0; row < padded.length; row++) {
       const line = padded[row];
       for (let col = 0; col < 10; col++) {
         const ch = line[col];
-        if (PIECE_CHARS.has(ch)) field.set(col, padded.length - 1 - row, ch as any);
+        if (PIECE_CHARS.has(ch)) field.set(col, row, ch as any);
       }
     }
     return encoder.encode([{ field }]);
