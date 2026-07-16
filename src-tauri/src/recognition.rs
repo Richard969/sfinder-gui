@@ -354,8 +354,12 @@ pub fn crop_and_recognize(x: i32, y: i32, w: u32, h: u32) -> Result<String, Stri
     // Crop subregion using image crate
     let cropped = image::imageops::crop_imm(img, ox, oy, cw, ch).to_image();
 
-    // Debug: save cropped image for inspection
-    let debug_path = std::env::temp_dir().join("sfinder_cropped_debug.png");
+    // Debug: save cropped image next to executable for inspection
+    let debug_path = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+        .unwrap_or_else(|| std::env::temp_dir())
+        .join("sfinder_cropped_debug.png");
     if let Err(e) = cropped.save(&debug_path) {
         eprintln!("Failed to save debug image: {}", e);
     }
