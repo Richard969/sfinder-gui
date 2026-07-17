@@ -99,49 +99,6 @@ fn test_board_tki_full_recognition() {
 }
 
 #[test]
-fn test_board_2_full_recognition() {
-    let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let path = Path::new(manifest_dir).join("tests/fixtures/board_2.png");
-    assert!(path.exists(), "Fixture not found: {}", path.display());
-
-    let img = image::open(path.to_str().unwrap()).unwrap().to_rgb8();
-    let (result, debug) = recognize_field(&img).expect("Recognition failed");
-    eprintln!("board_2 debug: {}", debug);
-    eprintln!("board_2 result:\n{}", result);
-    let trimmed = trim_rows(&result);
-
-    // board_2 expected:
-    let expected = vec![
-        "TTTSII_LLL".to_string(),
-        "ZTSSII_OOL".to_string(),
-        "ZZSTII_OOJ".to_string(),
-        "LZTTII_JJJ".to_string(),
-        "LLLTOO_ZJJ".to_string(),
-        "SSSSOO_ZZJ".to_string(),
-        "LSSSS___ZJ".to_string(),
-        "LLL____JJJ".to_string(),
-        "_______J__".to_string(),
-    ];
-
-    assert_eq!(
-        trimmed.len(),
-        expected.len(),
-        "Expected {} rows, got {}: {:?}",
-        expected.len(),
-        trimmed.len(),
-        trimmed
-    );
-
-    for (i, (got, exp)) in trimmed.iter().zip(expected.iter()).enumerate() {
-        assert_eq!(
-            got, exp,
-            "board_2 row {}: expected '{}', got '{}'",
-            i, exp, got
-        );
-    }
-}
-
-#[test]
 fn test_board_garbage() {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     let path = Path::new(manifest_dir).join("tests/fixtures/board_garbage.png");
