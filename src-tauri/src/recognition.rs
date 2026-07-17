@@ -377,6 +377,18 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
 
     let trimmed: Vec<&str> = raw_lines[start..end].iter().map(|s| s.as_str()).collect();
 
+    // Trim top row if it has very few pieces (likely border artifact)
+    let trimmed = if trimmed.len() > 17 {
+        let top_pieces = trimmed[0].chars().filter(|c| *c != '_').count();
+        if top_pieces < 3 {
+            &trimmed[1..]
+        } else {
+            trimmed
+        }
+    } else {
+        trimmed
+    };
+
     let debug = format!(
         "palette={}, cell_w={:.1}px, n_rows={}, trimmed={}..{}",
         palette.name, cell_w, n_rows, start, end,
