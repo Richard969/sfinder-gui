@@ -8,3 +8,13 @@ src-tauri/output/
 .DS_Store
 solution-finder-1.43/
 solution-finder-*.zip
+
+# LaTeX build artifacts
+*.fmt
+*.aux
+*.dvi
+*.synctex.gz
+media/Tex/
+
+# TypeScript incremental build
+*.tsbuildinfo

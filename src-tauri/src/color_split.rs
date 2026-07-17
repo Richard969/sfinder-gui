@@ -165,7 +165,7 @@ fn parse_field(field_str: &str) -> Option<Vec<Vec<char>>> {
 }
 
 fn cell_at(grid: &[Vec<char>], x: i32, y: i32) -> char {
-    if x < 0 || x > 9 || y < 0 || y > 22 { return '_'; }
+    if !(0..=9).contains(&x) || !(0..=22).contains(&y) { return '_'; }
     grid[y as usize][x as usize]
 }
 
@@ -175,7 +175,7 @@ const DIRS: [(i32, i32); 4] = [(1, 0), (-1, 0), (0, 1), (0, -1)];
 
 fn flood_fill(
     grid: &[Vec<char>], start_x: i32, start_y: i32, piece_type: char,
-    visited: &mut Vec<Vec<bool>>,
+    visited: &mut [Vec<bool>],
 ) -> Vec<(i32, i32)> {
     let mut cells = Vec::new();
     let mut queue = vec![(start_x, start_y)];
@@ -185,7 +185,7 @@ fn flood_fill(
         cells.push((x, y));
         for (dx, dy) in &DIRS {
             let nx = x + dx; let ny = y + dy;
-            if nx < 0 || nx > 9 || ny < 0 || ny > 22 { continue; }
+            if !(0..=9).contains(&nx) || !(0..=22).contains(&ny) { continue; }
             if visited[ny as usize][nx as usize] { continue; }
             if cell_at(grid, nx, ny) != piece_type { continue; }
             visited[ny as usize][nx as usize] = true;
@@ -299,7 +299,7 @@ fn auto_split(field_str: &str) -> Result<Vec<PieceOperation>, String> {
     for y in 0..=22 {
         let full = (0..10).all(|x| grid[y as usize][x as usize] != '_');
         if full {
-            full_rows.insert(y as i32);
+            full_rows.insert(y);
         }
     }
 
@@ -311,7 +311,7 @@ fn auto_split(field_str: &str) -> Result<Vec<PieceOperation>, String> {
             let cell = grid[y as usize][x as usize];
             if cell == '_' || cell == 'X' || visited[y as usize][x as usize] { continue; }
 
-            let cells = flood_fill(&grid, x as i32, y as i32, cell, &mut visited);
+            let cells = flood_fill(&grid, x, y, cell, &mut visited);
             if cells.len() != 4 { continue; }
 
             if let Some(op) = identify_piece(&cells, cell) {

@@ -1,10 +1,14 @@
 {
   "identifier": "default",
   "description": "Default permissions for sfinder-gui",
-  "windows": ["main"],
+  "windows": ["main", "capture-overlay"],
   "permissions": [
     "core:default",
     "core:webview:allow-create-webview-window",
+    "core:window:allow-create",
+    "core:window:allow-close",
+    "core:window:allow-set-fullscreen",
+    "core:event:default",
     {
       "identifier": "shell:allow-spawn",
       "allow": [

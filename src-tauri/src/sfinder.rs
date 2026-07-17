@@ -122,19 +122,17 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
     }
 
     // --split (not valid for cover)
-    if !is_cover {
-        if config.split.unwrap_or(false) {
+    if !is_cover
+        && config.split.unwrap_or(false) {
             args.push("--split".to_string());
             args.push("yes".to_string());
         }
-    }
 
     // --specified-only (not valid for cover)
-    if !is_cover {
-        if config.specified_only.unwrap_or(false) {
+    if !is_cover
+        && config.specified_only.unwrap_or(false) {
             args.push("--specified-only".to_string());
         }
-    }
 
     // --reserved
     if config.reserved.unwrap_or(false) {
@@ -223,7 +221,7 @@ pub fn compute_path_coverage(csv_path: &str) -> (Vec<PathResultEntry>, u32) {
     let mut results: Vec<PathResultEntry> = map.into_iter()
         .map(|(fumen, (coverage, used))| PathResultEntry { fumen, coverage, used })
         .collect();
-    results.sort_by(|a, b| b.coverage.cmp(&a.coverage));
+    results.sort_by_key(|b| std::cmp::Reverse(b.coverage));
     (results, total_rows)
 }
 

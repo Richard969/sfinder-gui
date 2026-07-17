@@ -118,7 +118,7 @@ pub fn parse_kick_file(path: &str) -> Result<KickTable, String> {
 
         // Check for reference
         if right.starts_with('&') {
-            let ref_target = right[1..].trim(); // e.g. "L.NE"
+            let ref_target = right.strip_prefix('&').unwrap_or(right).trim(); // e.g. "L.NE"
             let mut ref_parts = ref_target.splitn(2, '.');
             let ref_piece = ref_parts.next().unwrap_or("").trim();
             let ref_dir = ref_parts.next().unwrap_or("").trim();

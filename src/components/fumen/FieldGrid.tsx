@@ -32,8 +32,9 @@ export default function FieldGrid({ visibleRows, highlightedCells }: FieldGridPr
     (x: number, y: number, ctrlKey: boolean) => {
       if (ctrlKey) {
         for (let cx = 0; cx < COLS; cx++) {
-          if (cx !== x) setCell(cx, y, pieceType);
+          setCell(cx, y, pieceType);
         }
+        setCell(x, y, '_');
       } else {
         setCell(x, y, pieceType);
       }
