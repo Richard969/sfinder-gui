@@ -1,4 +1,4 @@
-use sfinder_gui_lib::recognition::{recognize_field, PALETTE_TETR_IO};
+use sfinder_gui_lib::recognition::recognize_field;
 use std::path::Path;
 
 /// Trim empty (all-underscore) rows and all-garbage rows from top
