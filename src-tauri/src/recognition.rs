@@ -430,7 +430,7 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
 
     let trimmed: Vec<&str> = raw_lines[start..end].iter().map(|s| s.as_str()).collect();
 
-    // Trim sparse rows from both edges (border artifacts / empty UI rows)
+    // Trim sparse rows from both edges
     let max_pieces = trimmed.iter().map(|l| l.chars().filter(|c| *c != '_').count()).max().unwrap_or(0);
     let threshold = (max_pieces / 3).max(3);
 
@@ -452,7 +452,29 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
 
     let trimmed = &trimmed[new_start..new_end.max(new_start)];
 
-    // Trim all-garbage rows from edges (garbage buffer above board)
+    // If any row is fully colored (no garbage, no empty), remove all-garbage rows above it
+    let has_full_color_row = trimmed.iter().any(|l| {
+        l.chars().all(|c| c != '_' && c != 'X') && l.chars().filter(|&c| c != '_').count() == 10
+    });
+
+    if has_full_color_row {
+        let mut final_start = 0;
+        for (i, line) in trimmed.iter().enumerate() {
+            if line.chars().any(|c| c == 'X') {
+                final_start = i + 1;
+            } else {
+                break;
+            }
+        }
+        let trimmed = &trimmed[final_start..];
+        let debug = format!(
+            "palette={}, cell_w={:.1}px, n_rows={}, trimmed={}..{}, full_color_trim={}",
+            palette.name, cell_w, n_rows, start, end, final_start
+        );
+        return Ok((trimmed.join("\n"), debug));
+    }
+
+    // Trim all-garbage rows from edges (garbage buffer above/below board)
     let mut final_start = 0;
     for (i, line) in trimmed.iter().enumerate() {
         if line.chars().all(|c| c == 'X' || c == '_') && line.chars().filter(|&c| c == 'X').count() >= 5 {
