@@ -452,15 +452,13 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
 
     let trimmed = &trimmed[new_start..new_end.max(new_start)];
 
-    // If any row is fully colored (no garbage, no empty), remove all-garbage rows above it
-    let has_full_color_row = trimmed.iter().any(|l| {
-        l.chars().all(|c| c != '_' && c != 'X') && l.chars().filter(|&c| c != '_').count() == 10
-    });
+    // If any row has no garbage (X), trim garbage rows above it
+    let has_clean_row = trimmed.iter().any(|l| !l.contains('X'));
 
-    if has_full_color_row {
+    if has_clean_row {
         let mut final_start = 0;
         for (i, line) in trimmed.iter().enumerate() {
-            if line.chars().any(|c| c == 'X') {
+            if line.contains('X') {
                 final_start = i + 1;
             } else {
                 break;
@@ -468,7 +466,7 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
         }
         let trimmed = &trimmed[final_start..];
         let debug = format!(
-            "palette={}, cell_w={:.1}px, n_rows={}, trimmed={}..{}, full_color_trim={}",
+            "palette={}, cell_w={:.1}px, n_rows={}, trimmed={}..{}, garbage_trim={}",
             palette.name, cell_w, n_rows, start, end, final_start
         );
         return Ok((trimmed.join("\n"), debug));
