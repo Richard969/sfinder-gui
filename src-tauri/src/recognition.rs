@@ -377,17 +377,27 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
 
     let trimmed: Vec<&str> = raw_lines[start..end].iter().map(|s| s.as_str()).collect();
 
-    // Trim top row if it has very few pieces (likely border artifact)
-    let trimmed = if trimmed.len() > 17 {
-        let top_pieces = trimmed[0].chars().filter(|c| *c != '_').count();
-        if top_pieces < 3 {
-            &trimmed[1..]
-        } else {
-            trimmed
+    // Trim sparse rows from both edges (border artifacts / empty UI rows)
+    let max_pieces = trimmed.iter().map(|l| l.chars().filter(|c| *c != '_').count()).max().unwrap_or(0);
+    let threshold = (max_pieces / 3).max(3);
+
+    let mut new_start = 0;
+    for (i, line) in trimmed.iter().enumerate() {
+        if line.chars().filter(|c| *c != '_').count() >= threshold {
+            break;
         }
-    } else {
-        trimmed
-    };
+        new_start = i + 1;
+    }
+
+    let mut new_end = trimmed.len();
+    for (i, line) in trimmed.iter().enumerate().rev() {
+        if line.chars().filter(|c| *c != '_').count() >= threshold {
+            break;
+        }
+        new_end = i;
+    }
+
+    let trimmed = &trimmed[new_start..new_end.max(new_start)];
 
     let debug = format!(
         "palette={}, cell_w={:.1}px, n_rows={}, trimmed={}..{}",
