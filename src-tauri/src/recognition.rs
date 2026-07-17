@@ -112,6 +112,52 @@ fn detect_palette(img: &RgbImage) -> &'static ColorPalette {
 
 // ── Grid detection ──
 
+/// Detect the board region by finding topmost and bottommost rows with significant content.
+/// Returns (y_top, y_bottom) exclusive bounds of the actual board.
+fn detect_board_region(img: &RgbImage) -> (u32, u32) {
+    let (width, height) = img.dimensions();
+    if height < 10 {
+        return (0, height);
+    }
+
+    let mut y_bottom = height;
+    let mut y_top = 0;
+
+    // Find bottommost row with >2 non-empty cells
+    for y in (0..height).rev() {
+        let mut non_empty = 0;
+        for x in 0..width {
+            let px = img.get_pixel(x, y);
+            let (_, _, l) = rgb_to_hsl(px[0], px[1], px[2]);
+            if l > 20.0 {
+                non_empty += 1;
+            }
+        }
+        if non_empty > 2 {
+            y_bottom = y + 1;
+            break;
+        }
+    }
+
+    // Find topmost row with >2 non-empty cells
+    for y in 0..y_bottom {
+        let mut non_empty = 0;
+        for x in 0..width {
+            let px = img.get_pixel(x, y);
+            let (_, _, l) = rgb_to_hsl(px[0], px[1], px[2]);
+            if l > 20.0 {
+                non_empty += 1;
+            }
+        }
+        if non_empty > 2 {
+            y_top = y;
+            break;
+        }
+    }
+
+    (y_top, y_bottom)
+}
+
 /// Detect grid cell width by finding vertical edges of blocks.
 /// Samples only the bottom 60% (skips active pieces at top).
 fn detect_cell_width(img: &RgbImage) -> f64 {
@@ -308,17 +354,24 @@ pub fn recognize_field(img: &RgbImage) -> Result<(String, String), String> {
         return Err("Image too small (minimum 10×10 pixels)".to_string());
     }
 
+    // Detect actual board region (skip UI elements above/below)
+    let (y_top, y_bottom) = detect_board_region(img);
+    let board_height = y_bottom - y_top;
+    if board_height < 10 {
+        return Err("Could not detect board region".to_string());
+    }
+
     let palette = detect_palette(img);
     let cell_w = detect_cell_width(img);
-    let n_rows = (height as f64 / cell_w).ceil() as usize;
+    let n_rows = (board_height as f64 / cell_w).ceil() as usize;
     let n_rows = n_rows.max(1).min(40);
 
     let mut raw_lines: Vec<String> = Vec::new();
     let mut debug_cells: Vec<String> = Vec::new();
 
     for row in (0..n_rows).rev() {
-        let y_top = row as f64 * (height as f64 / n_rows as f64);
-        let y_bot = (row + 1) as f64 * (height as f64 / n_rows as f64);
+        let y_top = y_top as f64 + row as f64 * cell_w;
+        let y_bot = y_top as f64 + cell_w;
         let y_center = ((y_top + y_bot) / 2.0) as u32;
         let y_center = y_center.min(height - 1);
 
