@@ -1,18 +1,48 @@
+use sfinder_gui_lib::recognition::{
+    match_piece_color_with_palette, recognize_field, recognize_field_from_file, PALETTE_TETR_IO,
+};
 use std::path::Path;
 
 #[test]
-fn test_recognize_tetr_io_board() {
+fn test_recognize_board_1() {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let path = Path::new(manifest_dir).join("tests/fixtures/tetr_io_test1.png");
+    let path = Path::new(manifest_dir).join("tests/fixtures/board_1.png");
     if !path.exists() {
         println!("Skipping test: fixture not found");
         return;
     }
-    let result = sfinder_gui_lib::recognition::recognize_field_from_file(path.to_str().unwrap());
-    match result {
-        Ok(field) => println!("Result:\n{}", field),
-        Err(e) => panic!("Failed: {}", e),
+    let field = recognize_field_from_file(path.to_str().unwrap()).expect("Recognition failed");
+    println!("board_1 result:\n{}", field);
+    let lines: Vec<&str> = field.lines().collect();
+    assert!(lines.len() >= 4, "Expected >= 4 lines, got {}: {}", lines.len(), field);
+}
+
+#[test]
+fn test_recognize_board_tki() {
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let path = Path::new(manifest_dir).join("tests/fixtures/board_tki.png");
+    if !path.exists() {
+        println!("Skipping test: fixture not found");
+        return;
     }
+    let field = recognize_field_from_file(path.to_str().unwrap()).expect("Recognition failed");
+    println!("board_tki result:\n{}", field);
+    let lines: Vec<&str> = field.lines().collect();
+    assert!(lines.len() >= 4, "Expected >= 4 lines, got {}: {}", lines.len(), field);
+}
+
+#[test]
+fn test_recognize_board_2() {
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let path = Path::new(manifest_dir).join("tests/fixtures/board_2.png");
+    if !path.exists() {
+        println!("Skipping test: fixture not found");
+        return;
+    }
+    let field = recognize_field_from_file(path.to_str().unwrap()).expect("Recognition failed");
+    println!("board_2 result:\n{}", field);
+    let lines: Vec<&str> = field.lines().collect();
+    assert!(lines.len() >= 4, "Expected >= 4 lines, got {}: {}", lines.len(), field);
 }
 
 #[test]
@@ -20,16 +50,17 @@ fn test_recognize_all_black_board() {
     let img = image::RgbImage::from_fn(10, 10, |_, _| image::Rgb([18u8, 18, 18]));
     let result = sfinder_gui_lib::recognition::recognize_field_simple(&img);
     match result {
-        Ok(field) => assert!(field.chars().all(|c| c == '_' || c == '\n'), "got: {}", field),
+        Ok(field) => assert!(
+            field.chars().all(|c| c == '_' || c == '\n'),
+            "got: {}",
+            field
+        ),
         Err(_) => {}
     }
 }
 
 #[test]
 fn test_tetr_io_color_matching() {
-    // Test match_piece_color directly for precise results
-    use sfinder_gui_lib::recognition::{match_piece_color_with_palette, PALETTE_TETR_IO};
-
     let color_tests: &[(u8, u8, u8, char)] = &[
         (52, 181, 133, 'I'),  // 34b585 teal
         (179, 153, 50, 'O'),  // b39932 yellow
@@ -52,16 +83,9 @@ fn test_tetr_io_color_matching() {
     }
 }
 
-/// Test that garbage rows are correctly identified.
-/// Simulates a tetr.io board with:
-/// - Bottom 13 rows of grey garbage (with 3D bevel effect)
-/// - Middle 4 rows of colored blocks (like the user's screenshot)
-/// - Top 6 rows empty
 #[test]
 fn test_recognize_garbage_rows() {
-    use sfinder_gui_lib::recognition::recognize_field;
-
-    // Board dimensions: 10 cols x 23 rows
+    // 10×23 board, cell_size=32
     let cell_size = 32u32;
     let cols = 10u32;
     let rows = 23u32;
@@ -69,29 +93,24 @@ fn test_recognize_garbage_rows() {
     let height = rows * cell_size;
 
     let img = image::RgbImage::from_fn(width, height, |x, y| {
-        let row = y / cell_size; // 0=top, 22=bottom
+        let row = y / cell_size;
         let col = x / cell_size;
         let cx = x % cell_size;
         let cy = y % cell_size;
 
-        // Top 6 rows: empty (dark background)
         if row < 6 {
             return image::Rgb([20, 20, 25]);
         }
 
-        // Bottom 13 rows (row 6-18): grey garbage with bevel
         if row < 19 {
-            // Simple 3D bevel: brighter in center, darker at edges
             let bevel = if cx < 3 || cy < 3 || cx >= cell_size - 3 || cy >= cell_size - 3 {
-                100 // dark edge
+                100
             } else {
-                160 // bright center
+                160
             };
             return image::Rgb([bevel, bevel, bevel + 5]);
         }
 
-        // Middle 4 rows (row 19-22): colored blocks
-        // Row 22 (bottom): I Z Z _ T _ L L T T (from user's expected result)
         match row {
             22 => match col {
                 0 => image::Rgb([52, 181, 133]),  // I
@@ -137,7 +156,6 @@ fn test_recognize_garbage_rows() {
     let lines: Vec<&str> = field.lines().collect();
     assert!(lines.len() >= 16, "Expected >= 16 lines, got {}: {}", lines.len(), field);
 
-    // Garbage rows (X) should appear
     let max_x_count = lines.iter().filter(|l| l.chars().all(|c| c == 'X')).count();
     assert!(max_x_count >= 8, "Expected >= 8 all-X lines (garbage), got {}", max_x_count);
 }
