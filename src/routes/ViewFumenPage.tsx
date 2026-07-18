@@ -12,14 +12,8 @@ export default function ViewFumenPage() {
   const pages = useFumenStore((s) => s.pages);
   const currentPageIndex = useFumenStore((s) => s.currentPageIndex);
   const goToPage = useFumenStore((s) => s.goToPage);
-  // Read from sessionStorage (set by OutputViewer) or URL param
-  const params = new URLSearchParams(window.location.search);
-  const storageKey = params.get('key');
-  const fumenStr = storageKey
-    ? sessionStorage.getItem(storageKey) || ''
-    : decodeURIComponent(
-        window.location.search.replace(/^.*[?&]fumen=([^&]*).*$/, '$1')
-      );
+  // Read fumen from URL hash (set by OutputViewer via handleView)
+  const fumenStr = decodeURIComponent(window.location.hash.replace(/^#/, ''));
 
   useEffect(() => {
     if (fumenStr) decodeFumen(fumenStr);
