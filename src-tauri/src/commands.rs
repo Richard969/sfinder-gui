@@ -267,7 +267,7 @@ pub async fn start_capture(app: tauri::AppHandle) -> Result<(), String> {
     .skip_taskbar(true)
     .always_on_top(true);
 
-    #[cfg(target_os = "windows")]
+    #[cfg(not(target_os = "macos"))]
     let builder = builder.transparent(true);
 
     let _ = builder
