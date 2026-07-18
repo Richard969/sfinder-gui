@@ -660,7 +660,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         {!failed && activeTab === 'solutions' && command === 'spin' && (
           <SpinGrid rows={spinRows} />
         )}
-        {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && (
+        {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && command !== 'spin' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
         )}
         {!failed && activeTab === 'solutions' && command === 'path' && (
