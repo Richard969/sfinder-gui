@@ -255,7 +255,7 @@ pub async fn start_capture(app: tauri::AppHandle) -> Result<(), String> {
     };
 
     // Create overlay window spanning all monitors
-    let _ = WebviewWindowBuilder::new(
+    let builder = WebviewWindowBuilder::new(
         &app,
         "capture-overlay",
         tauri::WebviewUrl::App("overlay.html".into()),
@@ -265,9 +265,14 @@ pub async fn start_capture(app: tauri::AppHandle) -> Result<(), String> {
     .position(min_x as f64, min_y as f64)
     .inner_size(win_w as f64, win_h as f64)
     .skip_taskbar(true)
-    .always_on_top(true)
-    .build()
-    .map_err(|e| format!("Failed to create overlay window: {}", e))?;
+    .always_on_top(true);
+
+    #[cfg(target_os = "windows")]
+    let builder = builder.transparent(true);
+
+    let _ = builder
+        .build()
+        .map_err(|e| format!("Failed to create overlay window: {}", e))?;
 
     // Give overlay focus so it receives mouse events immediately
     if let Some(window) = app.get_webview_window("capture-overlay") {
