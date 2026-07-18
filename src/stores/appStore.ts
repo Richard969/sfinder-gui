@@ -22,6 +22,7 @@ export const useAppStore = create<AppStore>()(
         theme: 'dark',
         language: 'en',
         outputDirectory: '',
+        showRareOptions: false,
       },
       javaInfo: { installed: false },
       sfinderJarInfo: { found: false },

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { X } from 'lucide-react';
 import { useT } from '@/i18n/useTranslation';
 
 export default function Header() {
@@ -45,20 +46,19 @@ export default function Header() {
       {usage && (
         <>
           <button onClick={() => setShowUsage(true)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded-md border border-border hover:border-muted-foreground/40 shrink-0">
+            className="text-xs text-foreground hover:text-accent-foreground transition-colors px-3 py-1 rounded-md border border-foreground/20 hover:border-foreground/40 shrink-0">
             Usage
           </button>
           {showUsage && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowUsage(false)}>
-              <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-base font-semibold mb-3 text-foreground">{title}</h2>
-                <div className="p-3">
-                  <pre className="text-sm text-foreground leading-relaxed whitespace-pre-wrap font-sans">{usage}</pre>
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowUsage(false)}>
+              <div className="relative w-full max-w-xl rounded-lg border border-border bg-card p-5 shadow-lg animate-in fade-in zoom-in-95"
+                onClick={(e) => e.stopPropagation()}>
                 <button onClick={() => setShowUsage(false)}
-                  className="mt-4 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                  Close
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="h-4 w-4" />
                 </button>
+                <h2 className="text-base font-semibold mb-3 text-foreground pr-6">{title}</h2>
+                <pre className="text-sm text-foreground leading-relaxed whitespace-pre-wrap font-sans">{usage}</pre>
               </div>
             </div>
           )}

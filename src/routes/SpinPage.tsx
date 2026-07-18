@@ -11,7 +11,6 @@ import PatternInput from '@/components/forms/PatternInput';
 import SpinOptions from '@/components/forms/SpinOptions';
 import CommandRunner from '@/components/forms/CommandRunner';
 import OutputViewer from '@/components/output/OutputViewer';
-import type { FilterType } from '@/types/sfinder';
 
 export default function SpinPage() {
   const jarInfo = useAppStore((s) => s.sfinderJarInfo);
@@ -29,7 +28,7 @@ export default function SpinPage() {
   const [line, setLine] = useState(2);
   const [roof, setRoof] = useState(true);
   const [maxRoof, setMaxRoof] = useState(-1);
-  const [filter, setFilter] = useState<FilterType>('strict');
+  const [filter, setFilter] = useState<'strict' | 'ignore-t' | 'none'>('strict');
   const rows = useDisplayStore((s) => s.rows);
   const setRows = useDisplayStore((s) => s.setRows);
   const t = useT();

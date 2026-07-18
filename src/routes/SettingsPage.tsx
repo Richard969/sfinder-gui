@@ -152,6 +152,21 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Rare Options */}
+      <div className="rounded-lg border border-border bg-card">
+        <div className="p-5">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={settings.showRareOptions}
+              onChange={(e) => updateSettings({ showRareOptions: e.target.checked })}
+              className="rounded border-border accent-primary" />
+            <div>
+              <div className="text-sm font-medium text-foreground">Rare Options</div>
+              <p className="text-xs text-muted-foreground">Show less-used options per command page</p>
+            </div>
+          </label>
+        </div>
+      </div>
     </div>
   );
 }

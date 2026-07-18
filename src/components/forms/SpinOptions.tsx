@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { useT } from '@/i18n/useTranslation';
+import { useAppStore } from '@/stores/appStore';
 
 interface SpinOptionsProps {
   fillBottom: number;
@@ -14,15 +16,9 @@ interface SpinOptionsProps {
   onRoofChange: (v: boolean) => void;
   maxRoof: number;
   onMaxRoofChange: (v: number) => void;
-  filter: 'strict' | 'ignore-t' | 'none';
-  onFilterChange: (v: 'strict' | 'ignore-t' | 'none') => void;
+  filter?: 'strict' | 'ignore-t' | 'none';
+  onFilterChange?: (v: 'strict' | 'ignore-t' | 'none') => void;
 }
-
-const FILTER_OPTIONS: { value: 'strict' | 'ignore-t' | 'none'; label: string }[] = [
-  { value: 'strict', label: 'Strict' },
-  { value: 'ignore-t', label: 'Ignore T' },
-  { value: 'none', label: 'None' },
-];
 
 const HelpTooltip = ({ text }: { text: string }) => (
   <div className="group relative inline-flex">
@@ -38,29 +34,40 @@ const HelpTooltip = ({ text }: { text: string }) => (
 const NumInput = ({ label, value, onChange, min, hint, tooltip }: {
   label: string; value: number; onChange: (v: number) => void;
   min?: number; hint?: string; tooltip?: string;
-}) => (
-  <div className="space-y-1">
-    <div className="flex items-center gap-1">
-      <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
-      {tooltip && <HelpTooltip text={tooltip} />}
-      {hint && <span className="ml-auto text-[9px] text-muted-foreground/60">{hint}</span>}
+}) => {
+  const [local, setLocal] = useState(String(value));
+  useEffect(() => { setLocal(String(value)); }, [value]);
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1">
+        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+        {tooltip && <HelpTooltip text={tooltip} />}
+        {hint && <span className="ml-auto text-[9px] text-muted-foreground/60">{hint}</span>}
+      </div>
+      <input
+        type="number"
+        value={local}
+        min={min}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setLocal(raw);
+          const n = parseFloat(raw);
+          if (!isNaN(n)) onChange(n);
+        }}
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 font-mono text-sm
+          placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring
+          [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
     </div>
-    <input
-      type="number"
-      value={value}
-      min={min}
-      onChange={(e) => onChange(Number(e.target.value))}
-      className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 font-mono text-sm
-        placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
-    />
-  </div>
-);
+  );
+};
 
 export default function SpinOptions(props: SpinOptionsProps) {
   const t = useT();
+  const showRare = useAppStore((s) => s.settings.showRareOptions);
   const { fillBottom, onFillBottomChange, fillTop, onFillTopChange, marginHeight, onMarginHeightChange,
-    line, onLineChange, roof, onRoofChange, maxRoof, onMaxRoofChange, filter, onFilterChange } = props;
-
+    line, onLineChange, roof, onRoofChange, maxRoof, onMaxRoofChange, filter,
+    onFilterChange } = props;
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-1.5">
@@ -75,8 +82,31 @@ export default function SpinOptions(props: SpinOptionsProps) {
           min={-1} hint={t('spin.fillTopHint')} tooltip={t('spin.fillTopTooltip')} />
         <NumInput label={t('spin.marginHeight')} value={marginHeight} onChange={onMarginHeightChange}
           min={-1} hint={t('spin.marginHeightHint')} tooltip={t('spin.marginHeightTooltip')} />
-        <NumInput label={t('spin.line')} value={line} onChange={onLineChange}
-          min={0} hint={t('spin.lineHint')} tooltip={t('spin.lineTooltip')} />
+        <div className="space-y-1">
+          <div className="flex items-center gap-1">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+              {t('spin.line')}
+            </label>
+            <HelpTooltip text={t('spin.lineTooltip')} />
+          </div>
+          <div className="flex gap-1">
+            <button onClick={() => onLineChange(1)}
+              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
+                ${line === 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+              TSS
+            </button>
+            <button onClick={() => onLineChange(2)}
+              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
+                ${line === 2 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+              TSD
+            </button>
+            <button onClick={() => onLineChange(3)}
+              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
+                ${line === 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+              TST
+            </button>
+          </div>
+        </div>
         <NumInput label={t('spin.maxRoof')} value={maxRoof} onChange={onMaxRoofChange}
           min={-1} hint={t('spin.maxRoofHint')} tooltip={t('spin.maxRoofTooltip')} />
         <div className="space-y-1">
@@ -99,25 +129,25 @@ export default function SpinOptions(props: SpinOptionsProps) {
             </button>
           </div>
         </div>
-      </div>
-      <div className="space-y-1">
-        <div className="flex items-center gap-1">
-          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-            {t('spin.filter')}
-          </label>
-          <HelpTooltip text={t('spin.filterTooltip')} />
-        </div>
-        <div className="flex gap-1">
-          {FILTER_OPTIONS.map((opt) => (
-            <button key={opt.value} onClick={() => onFilterChange(opt.value)}
-              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                ${filter === opt.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        {showRare && filter !== undefined && onFilterChange && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                {t('spin.filter')}
+              </label>
+              <HelpTooltip text={t('spin.filterTooltip')} />
+            </div>
+            <div className="flex gap-1">
+              {(['strict', 'ignore-t', 'none'] as const).map((val) => (
+                <button key={val} onClick={() => onFilterChange(val)}
+                  className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
+                    ${filter === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                  {{ strict: 'Strict', 'ignore-t': 'Ignore T', none: 'None' }[val]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

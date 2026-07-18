@@ -19,4 +19,5 @@ export interface AppSettings {
   theme: Theme;
   language: Language;
   outputDirectory: string;
+  showRareOptions: boolean;
 }
