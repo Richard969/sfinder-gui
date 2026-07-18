@@ -19,10 +19,8 @@ export default function PathPage() {
   const clearStatus = useCommandStore((s) => s.clearStatus);
   const isRunning = status.type === 'running';
   const { execute, cancel } = useSfinderCommand();
-  useEffect(() => {
-    clearStatus();
-    return () => { if (isRunning) cancel(); };
-  }, [clearStatus, isRunning, cancel]);
+  useEffect(() => { clearStatus(); }, []);
+  useEffect(() => () => { if (isRunning) cancel(); }, [isRunning, cancel]);
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
@@ -30,7 +28,6 @@ export default function PathPage() {
   const std = usePageStore((s) => s.standard);
   const update = usePageStore((s) => s.update);
   const clearedAt = useFumenStore((s) => s.clearedAt);
-  useEffect(() => { if (clearedAt) update('standard', { clearLine: 4 }); }, [clearedAt]);
   const page = currentPageIndex + 1;
   const clearLine = useFumenStore((s) => s.clearLine);
   const setClearLine = useFumenStore((s) => s.setClearLine);

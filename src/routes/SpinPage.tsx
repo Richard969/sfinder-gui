@@ -19,10 +19,10 @@ export default function SpinPage() {
   const clearStatus = useCommandStore((s) => s.clearStatus);
   const isRunning = status.type === 'running';
   const { execute, cancel } = useSfinderCommand();
-  useEffect(() => {
-    clearStatus();
-    return () => { if (isRunning) cancel(); };
-  }, [clearStatus, isRunning, cancel]);
+  // clear status on mount
+  useEffect(() => { clearStatus(); }, []);
+  // auto-cancel on unmount if running
+  useEffect(() => () => { if (isRunning) cancel(); }, [isRunning, cancel]);
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
