@@ -653,10 +653,22 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
             )}
             <div className="flex justify-center">
               <button onClick={() => {
-                const fumens = spinRows.map((r) => r.fumen).filter(Boolean) as string[];
-                if (fumens.length === 0) return;
-                const combined = combineFumens(fumens.map((f) => ({ fumen: f, coverage: 0 })), fumens.length);
-                if (combined) handleView(combined);
+                const allPages: any[] = [];
+                for (const r of spinRows) {
+                  if (!r.fumen) continue;
+                  try {
+                    const decoded = decoder.decode(r.fumen);
+                    if (!decoded || decoded.length === 0) continue;
+                    for (let i = 0; i < decoded.length; i++) {
+                      const p = decoded[i];
+                      allPages.push({ field: p.field, comment: i === 0 ? r.operations : (p.comment || ''), operation: p.operation, flags: p.flags });
+                    }
+                  } catch {}
+                }
+                if (allPages.length > 0) {
+                  const encoded = encoder.encode(allPages);
+                  if (encoded) handleView(encoded);
+                }
               }} className="rounded-md bg-primary/15 px-5 py-2 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
                 {t('output.viewAll')}
               </button>
