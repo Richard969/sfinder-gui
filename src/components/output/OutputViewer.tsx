@@ -410,12 +410,8 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     return (output.strictMinimal || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.strictMinimal]);
   const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
-  const spinRows = useMemo(() => {
-    const result = parseSpin(htmlOutput);
-    console.log('parseSpin html len:', htmlOutput.length, 'results:', result.length, 'first:', result[0]?.fumen?.substring(0, 50));
-    return result;
-  }, [htmlOutput]);
-  const spinCats = useMemo(() => { try { const r = getSpinCategoryCounts(htmlOutput); console.log('spinCats:', r); return r; } catch (e) { console.error('spinCats err:', e); return {}; } }, [htmlOutput]);
+  const spinRows = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
+  const spinCats = useMemo(() => { try { return getSpinCategoryCounts(htmlOutput); } catch { return {}; } }, [htmlOutput]);
 
   const handleView = (fumen: string) => {
     try {
@@ -632,17 +628,12 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
               <div className="text-3xl font-bold text-foreground">{spinRows.length}</div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {( [
-                ['single-[regular]', 'Single [Regular]', 'border-green-500/40 bg-green-500/5'],
-                ['single-[mini]',    'Single [Mini]',    'border-emerald-500/40 bg-emerald-500/5'],
-                ['double-[regular]', 'Double [Regular]', 'border-blue-500/40 bg-blue-500/5'],
-                ['double-[mini]',    'Double [Mini]',    'border-cyan-500/40 bg-cyan-500/5'],
-                ['triple-[regular]', 'Triple [Regular]', 'border-purple-500/40 bg-purple-500/5'],
-              ] as const).map(([cat, label, color]) => {
-                const count = spinCats[cat] || 0;
+              {Object.entries(spinCats).map(([cat, count], i) => {
                 if (count === 0) return null;
+                const colors = ['border-green-500/40 bg-green-500/5', 'border-blue-500/40 bg-blue-500/5', 'border-purple-500/40 bg-purple-500/5', 'border-cyan-500/40 bg-cyan-500/5', 'border-orange-500/40 bg-orange-500/5', 'border-pink-500/40 bg-pink-500/5'];
+                const label = cat.replace(/-(?=\[)/, ' ').replace(/\[(\w+)\]/, (_, w) => `[${w.toUpperCase()}]`).replace(/\b\w/g, (c) => c.toUpperCase());
                 return (
-                  <div key={cat} className={`rounded-lg border p-3 flex flex-col items-center gap-0.5 ${color}`}>
+                  <div key={cat} className={`rounded-lg border p-3 flex flex-col items-center gap-0.5 ${colors[i % colors.length]}`}>
                     <span className="text-[10px] font-medium opacity-70">{label}</span>
                     <span className="text-lg font-bold">{count}</span>
                   </div>
