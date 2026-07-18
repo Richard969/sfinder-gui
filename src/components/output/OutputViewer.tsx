@@ -410,7 +410,11 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     return (output.strictMinimal || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.strictMinimal]);
   const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
-  const spinRows = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
+  const spinRows = useMemo(() => {
+    const result = parseSpin(htmlOutput);
+    console.log('parseSpin html len:', htmlOutput.length, 'results:', result.length, 'first:', result[0]?.fumen?.substring(0, 50));
+    return result;
+  }, [htmlOutput]);
   const spinCats = useMemo(() => getSpinCategoryCounts(htmlOutput), [htmlOutput]);
 
   const handleView = (fumen: string) => {
