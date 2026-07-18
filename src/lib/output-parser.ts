@@ -175,7 +175,7 @@ export function getSpinCategoryCounts(html: string): Record<string, number> {
     const divs = section.querySelectorAll('div');
     let count = 0;
     for (const div of divs) {
-      if (div.textContent?.match(/\[OX\-\]/)) count++;
+      if (div.textContent?.match(/\[[OX\-]\]/)) count++;
     }
     if (count > 0) counts[cat] = count;
   }

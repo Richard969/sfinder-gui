@@ -415,7 +415,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     console.log('parseSpin html len:', htmlOutput.length, 'results:', result.length, 'first:', result[0]?.fumen?.substring(0, 50));
     return result;
   }, [htmlOutput]);
-  const spinCats = useMemo(() => { try { return getSpinCategoryCounts(htmlOutput); } catch (e) { console.error('spinCats fail:', e); return {}; } }, [htmlOutput]);
+  const spinCats = useMemo(() => { try { const r = getSpinCategoryCounts(htmlOutput); console.log('spinCats:', r); return r; } catch (e) { console.error('spinCats err:', e); return {}; } }, [htmlOutput]);
 
   const handleView = (fumen: string) => {
     try {
