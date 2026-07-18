@@ -49,7 +49,7 @@ export default function SpinPage() {
           marginHeight: page.marginHeight, line: page.line,
           roof: page.roof, maxRoof: page.maxRoof, filter: page.filter,
         })}
-        onCancel={() => {}} disabled={!ready || !editorFumen || !patterns} />
+        onCancel={() => {}} disabled={!ready || !patterns} />
       {status.type === 'success' && <OutputViewer output={status.output} command="spin" />}
     </div>
   );

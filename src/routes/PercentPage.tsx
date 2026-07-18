@@ -44,7 +44,7 @@ export default function PercentPage() {
       />
       <CommandRunner status={status}
         onExecute={() => execute({ command: 'percent', tetfu: [editorFumen], patterns, hold: std.hold, drop: std.drop, kicks: std.kicks, page, clearLine })}
-        onCancel={() => {}} disabled={!ready || !editorFumen || !patterns} />
+        onCancel={() => {}} disabled={!ready || !patterns} />
     </div>
   );
 }

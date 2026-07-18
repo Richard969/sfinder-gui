@@ -57,7 +57,7 @@ export default function CoverPage() {
 
   const t = useT();
   const ready = javaInfo.installed && jarInfo.found;
-
+  const hasFieldContent = pages.some(p => p.operation !== undefined);
   /// Build one tetfu per page.
   /// Each tetfu = one placement pattern (may be multi-page if auto-split).
   async function buildTetfus(): Promise<string[]> {
@@ -251,12 +251,11 @@ export default function CoverPage() {
         </div>
       )}
 
-      {/* Execute — same runner for both logics */}
       <CommandRunner
         status={status}
         onExecute={runCover}
         onCancel={() => {}}
-        disabled={!ready || !editorFumen || !patterns}
+        disabled={!ready || !hasFieldContent || !patterns}
       />
 
       {status.type === 'success' && (
