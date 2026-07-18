@@ -72,6 +72,7 @@ interface FumenStore {
   fumenString: string;
   patterns: string;
   clearLine: number;
+  clearedAt: number;
   spinFillBottom: number;
   spinFillTop: number;
   spinMarginHeight: number;
@@ -136,6 +137,7 @@ export const useFumenStore = create<FumenStore>((set, get) => ({
   fumenString: '',
   patterns: '',
   clearLine: 4,
+  clearedAt: 0,
   spinFillBottom: 0,
   spinFillTop: -1,
   spinMarginHeight: -1,
@@ -158,6 +160,7 @@ export const useFumenStore = create<FumenStore>((set, get) => ({
     pages: [createEmptyFieldPage()],
     currentPageIndex: 0,
     fumenString: '',
+    clearedAt: Date.now(),
     patterns: '',
     undoStack: [],
     redoStack: [],
@@ -206,7 +209,7 @@ export const useFumenStore = create<FumenStore>((set, get) => ({
     pushSnapshot(state);
     const newPages = clonePages(state.pages);
     newPages[state.currentPageIndex] = createEmptyFieldPage();
-    return { pages: newPages, fumenString: encoder.encode(pagesToEncode(newPages)) };
+    return { pages: newPages, fumenString: '', clearedAt: Date.now() };
   }),
 
   setTool: (tool) => set({ selectedTool: tool }),

@@ -4,8 +4,7 @@ import { useCommandStore } from '@/stores/commandStore';
 import { useSfinderCommand } from '@/hooks/useSfinderCommand';
 import { useEditorFumen } from '@/components/fumen/FumenEditorEmbed';
 import { useFumenStore } from '@/stores/fumenStore';
-import { useDisplayStore } from '@/stores/displayStore';
-import { useT } from '@/i18n/useTranslation';
+import { usePageStore } from '@/stores/pageStore';
 import FumenEditorEmbed from '@/components/fumen/FumenEditorEmbed';
 import PatternInput from '@/components/forms/PatternInput';
 import SpinOptions from '@/components/forms/SpinOptions';
@@ -22,43 +21,33 @@ export default function SpinPage() {
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
-  const fillBottom = useFumenStore((s) => s.spinFillBottom);
-  const setFillBottom = useFumenStore((s) => s.setSpinFillBottom);
-  const fillTop = useFumenStore((s) => s.spinFillTop);
-  const setFillTop = useFumenStore((s) => s.setSpinFillTop);
-  const marginHeight = useFumenStore((s) => s.spinMarginHeight);
-  const setMarginHeight = useFumenStore((s) => s.setSpinMarginHeight);
-  const line = useFumenStore((s) => s.spinLine);
-  const setLine = useFumenStore((s) => s.setSpinLine);
-  const roof = useFumenStore((s) => s.spinRoof);
-  const setRoof = useFumenStore((s) => s.setSpinRoof);
-  const maxRoof = useFumenStore((s) => s.spinMaxRoof);
-  const setMaxRoof = useFumenStore((s) => s.setSpinMaxRoof);
-  const filter = useFumenStore((s) => s.spinFilter);
-  const setFilter = useFumenStore((s) => s.setSpinFilter);
-  const rows = useDisplayStore((s) => s.rows);
-  const setRows = useDisplayStore((s) => s.setRows);
+  const page = usePageStore((s) => s.spin);
+  const update = usePageStore((s) => s.update);
+  const reset = usePageStore((s) => s.reset);
+  const clearedAt = useFumenStore((s) => s.clearedAt);
+  useEffect(() => { if (clearedAt) reset('spin'); }, [clearedAt]);
   const showRare = useAppStore((s) => s.settings.showRareOptions);
-  useEffect(() => { if (!showRare) { setFilter('strict'); setRoof(true); setMaxRoof(-1); } }, [showRare]);
+  useEffect(() => { if (!showRare) update('spin', { filter: 'strict', roof: true, maxRoof: -1 }); }, [showRare]);
   const ready = javaInfo.installed && jarInfo.found;
-
   return (
     <div className="max-w-5xl mx-auto space-y-4">
-      <FumenEditorEmbed visibleRows={rows} onVisibleRowsChange={setRows} />
+      <FumenEditorEmbed visibleRows={page.rows} onVisibleRowsChange={(v) => update('spin', { rows: v })} />
       <PatternInput value={patterns} onChange={setPatterns} />
       <SpinOptions
-        fillBottom={fillBottom} onFillBottomChange={setFillBottom}
-        fillTop={fillTop} onFillTopChange={setFillTop}
-        marginHeight={marginHeight} onMarginHeightChange={setMarginHeight}
-        line={line} onLineChange={setLine}
-        roof={roof} onRoofChange={setRoof}
-        maxRoof={maxRoof} onMaxRoofChange={setMaxRoof}
-        filter={filter} onFilterChange={setFilter}
+        fillBottom={page.fillBottom} onFillBottomChange={(v) => update('spin', { fillBottom: v })}
+        fillTop={page.fillTop} onFillTopChange={(v) => update('spin', { fillTop: v })}
+        marginHeight={page.marginHeight} onMarginHeightChange={(v) => update('spin', { marginHeight: v })}
+        line={page.line} onLineChange={(v) => update('spin', { line: v })}
+        roof={page.roof} onRoofChange={(v) => update('spin', { roof: v })}
+        maxRoof={page.maxRoof} onMaxRoofChange={(v) => update('spin', { maxRoof: v })}
+        filter={page.filter} onFilterChange={(v) => update('spin', { filter: v })}
       />
       <CommandRunner status={status}
         onExecute={() => execute({
           command: 'spin', tetfu: [editorFumen], patterns,
-          fillBottom, fillTop, marginHeight, line, roof, maxRoof, filter,
+          fillBottom: page.fillBottom, fillTop: page.fillTop,
+          marginHeight: page.marginHeight, line: page.line,
+          roof: page.roof, maxRoof: page.maxRoof, filter: page.filter,
         })}
         onCancel={() => {}} disabled={!ready || !editorFumen || !patterns} />
       {status.type === 'success' && <OutputViewer output={status.output} command="spin" />}
