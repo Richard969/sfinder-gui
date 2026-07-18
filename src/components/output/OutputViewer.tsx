@@ -496,9 +496,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     />
   );
 
-  const FumenThumbnail = ({ fumen, mark, clears, holes, pieces }: {
-    fumen: string; mark: string; clears: number; holes: number; pieces: number;
-  }) => {
+  const FumenThumbnail = ({ fumen }: { fumen: string }) => {
     const pages = useMemo(() => {
       try { return decoder.decode(fumen); } catch { return null; }
     }, [fumen]);
@@ -526,14 +524,10 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
       }
       rows.push(<div key={y} className="flex gap-px">{cells}</div>);
     }
-    const mCls = mark === 'O' ? 'text-green-400' : mark === 'X' ? 'text-red-400' : 'text-muted-foreground';
-    const mLabel = mark === 'O' ? '✓' : mark === 'X' ? '✗' : '-';
     return (
-      <div className="flex flex-col items-center gap-1 p-2 rounded-lg border border-border bg-card hover:bg-accent cursor-pointer transition-colors"
+      <div className="flex flex-col items-center p-2 rounded-lg border border-border bg-card hover:bg-accent cursor-pointer transition-colors"
         onClick={() => handleView(fumen)}>
         <div className="flex flex-col gap-px bg-muted/30 p-1 rounded">{rows}</div>
-        <div className={`text-xs font-bold ${mCls}`}>{mLabel}</div>
-        <div className="text-[9px] text-muted-foreground">C{clears} H{holes} P{pieces}</div>
       </div>
     );
   };
@@ -554,7 +548,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         </div>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 max-h-[500px] overflow-y-auto p-1">
           {filtered.map((s, i) => (
-            s.fumen ? <FumenThumbnail key={i} fumen={s.fumen} mark={s.mark} clears={s.clear} holes={s.hole} pieces={s.piece} /> :
+            s.fumen ? <FumenThumbnail key={i} fumen={s.fumen} /> :
             <div key={i} className="flex flex-col items-center gap-1 p-2 rounded-lg border border-border bg-card">
               <span className={`text-lg font-bold ${s.mark === 'O' ? 'text-green-400' : s.mark === 'X' ? 'text-red-400' : 'text-muted-foreground'}`}>
                 {s.mark === 'O' ? '✓' : s.mark === 'X' ? '✗' : '-'}
