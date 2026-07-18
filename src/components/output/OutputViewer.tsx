@@ -502,19 +502,28 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     const pages = useMemo(() => {
       try { return decoder.decode(fumen); } catch { return null; }
     }, [fumen]);
-    const field = pages?.[pages.length - 1]?.field;
-    if (!field) return null;
-    let top = 22;
-    for (let y = 22; y >= 0; y--) {
-      let empty = true;
-      for (let x = 0; x < 10; x++) { if (field.at(x, y) !== '_') { empty = false; break; } }
-      if (empty) top = y - 1; else break;
+    if (!pages || pages.length === 0) return null;
+    const merged: string[][] = [];
+    for (let y = 0; y < 23; y++) merged[y] = Array(10).fill('_');
+    for (const p of pages) {
+      for (let y = 0; y < 23; y++) {
+        for (let x = 0; x < 10; x++) {
+          const cell = p.field.at(x, y);
+          if (cell !== '_') merged[y][x] = cell;
+        }
+      }
     }
-    const bottom = Math.max(0, top - 7);
+    let ctop = 22, cbtm = 0;
+    for (let y = 0; y < 23; y++) {
+      if (merged[y].some((c) => c !== '_')) { cbtm = y; if (ctop > y) ctop = y; }
+    }
+    if (cbtm < ctop) return null;
     const rows: React.ReactNode[] = [];
-    for (let y = top; y >= bottom; y--) {
+    for (let y = cbtm; y >= ctop; y--) {
       const cells: React.ReactNode[] = [];
-      for (let x = 0; x < 10; x++) { cells.push(<Cell key={x} cell={field.at(x, y)} />); }
+      for (let x = 0; x < 10; x++) {
+        cells.push(<Cell key={x} cell={merged[y][x]} />);
+      }
       rows.push(<div key={y} className="flex gap-px">{cells}</div>);
     }
     const mCls = mark === 'O' ? 'text-green-400' : mark === 'X' ? 'text-red-400' : 'text-muted-foreground';
