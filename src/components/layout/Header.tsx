@@ -43,20 +43,23 @@ export default function Header() {
         {desc && <p className="text-sm text-muted-foreground/70">{desc}</p>}
       </div>
       {usage && (
-        <div className="relative shrink-0">
-          <button onClick={() => setShowUsage(!showUsage)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary/50">
+        <>
+          <button onClick={() => setShowUsage(true)}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary/50 shrink-0">
             Usage
           </button>
           {showUsage && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowUsage(false)} />
-              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-lg border border-border bg-popover p-3 shadow-xl">
-                <pre className="text-xs text-popover-foreground leading-relaxed whitespace-pre-wrap font-mono">{usage}</pre>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowUsage(false)}>
+              <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <pre className="text-sm text-card-foreground leading-relaxed whitespace-pre-wrap font-sans">{usage}</pre>
+                <button onClick={() => setShowUsage(false)}
+                  className="mt-4 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                  Close
+                </button>
               </div>
-            </>
+            </div>
           )}
-        </div>
+        </>
       )}
     </header>
   );

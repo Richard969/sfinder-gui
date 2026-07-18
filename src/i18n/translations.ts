@@ -137,12 +137,12 @@ const en = {
     inconsistent: 'Inconsistent',
     unreliable: 'Unreliable',
     sequences: 'sequences successful',
-    usage: 'Usage:\n  *p4       → prob for any 4-draw\n  *p7       → full bag (5040)\n  I,*p4     → hold I, draw 4\n  T,O,I     → specific order\n  --hold avoid → no hold',
+    usage: 'Calculate PC success rate\n\nSteps:\n1. Draw a field and configure rows correctly.\n2. Input a piece pattern (e.g. *p4).\n3. Configure hold/drop/kicks if needed.\n4. Click EXECUTE and check the probability result.',
   },
   path: {
     title: 'Path',
     desc: 'Enumerate all PC solutions.',
-    usage: 'Usage:\n  *p4       → solutions for any 4-draw\n  *p7       → coverage for full bag\n  I,T,S,Z   → specific piece order\n  --split   → one piece per fumen page\n  --hold avoid → no hold',
+    usage: 'Enumerate all PC solutions\n\nSteps:\n1. Draw a field and make sure rows are configured correctly.\n2. Input a piece pattern (e.g. [ILSZTOJ]p7).\n3. Configure other options if needed.\n4. Click EXECUTE and get the results from solution finder.',
   },
   setup: {
     title: 'Setup',
@@ -183,7 +183,7 @@ const en = {
     piece: 'Piece',
     noSpin: 'No T-spin solutions found.',
     solutionCount: 'T-spin solutions',
-    usage: 'Usage:\n  *p7       → T-spin with defaults\n  *p4       → T-spin with 4 pieces\n  line: 2   → TSD (default)\n  line: 3   → TST\n  roof: no  → skip roof search\n  filter: ignore-t → include [X] solutions',
+    usage: 'Find T-spin operations\n\nSteps:\n1. Draw a field with enough rows for T-spins.\n2. Input a piece pattern (e.g. *p7).\n3. Set line (2=TSD, 3=TST), roof, and filter options.\n4. Click EXECUTE and browse [O]/[X]/[-] solutions.',
   },
   cover: {
     title: 'Cover',
@@ -345,12 +345,12 @@ const zh: typeof en = {
     inconsistent: '不稳定',
     unreliable: '不可靠',
     sequences: '个序列成功',
-    usage: '用法:\n  *p4       → 任意 4 块的概率\n  *p7       → 整袋 (5040)\n  I,*p4     → 保留 I, 再抽 4\n  T,O,I     → 指定顺序\n  --hold avoid → 不使用暂存',
+    usage: '计算 PC 成功率\n\n步骤:\n1. 绘制场地并确认行数设置正确。\n2. 输入块序列 (例如 *p4)。\n3. 按需配置 hold/drop/kicks。\n4. 点击 EXECUTE 查看概率结果。',
   },
   path: {
     title: 'Path',
     desc: '枚举所有 PC 解法。',
-    usage: '用法:\n  *p4       → 任意 4 块的解法\n  *p7       → 整袋覆盖\n  I,T,S,Z   → 指定顺序\n  --split   → 每页一个块\n  --hold avoid → 不使用暂存',
+    usage: '枚举所有 PC 解法\n\n步骤:\n1. 绘制场地并确认行数设置正确。\n2. 输入块序列 (例如 [ILSZTOJ]p7)。\n3. 按需配置其他选项。\n4. 点击 EXECUTE 查看解法结果。',
   },
   setup: {
     title: 'Setup',
@@ -391,7 +391,7 @@ const zh: typeof en = {
     piece: '块',
     noSpin: '未找到 T-spin 解。',
     solutionCount: 'T-spin 解',
-    usage: '用法:\n  *p7       → 默认 T-spin 搜索\n  *p4       → 使用 4 块搜索\n  line: 2   → TSD (默认)\n  line: 3   → TST\n  roof: no  → 跳过屋顶搜索\n  filter: ignore-t → 包含 [X] 解',
+    usage: '寻找 T-spin 操作\n\n步骤:\n1. 绘制场地（至少 4 行方块用于 T-spin）。\n2. 输入块序列 (例如 *p7)。\n3. 设置 line (2=TSD, 3=TST)、roof 和 filter 选项。\n4. 点击 EXECUTE 浏览 [O]/[X]/[-] 结果。',
   },
   cover: {
     title: 'Cover',
