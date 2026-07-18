@@ -264,7 +264,6 @@ pub async fn start_capture(app: tauri::AppHandle) -> Result<(), String> {
     .decorations(false)
     .position(min_x as f64, min_y as f64)
     .inner_size(win_w as f64, win_h as f64)
-    .transparent(true)
     .skip_taskbar(true)
     .always_on_top(true)
     .build()
