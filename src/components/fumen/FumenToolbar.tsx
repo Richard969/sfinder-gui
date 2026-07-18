@@ -34,7 +34,7 @@ function fieldStrToFumen(fieldStr: string): string | null {
   }
 }
 
-export default function FumenToolbar() {
+export default function FumenToolbar({ hideScreenshot }: { hideScreenshot?: boolean }) {
   const t = useT();
   const [capturing, setCapturing] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'error' | 'success' } | null>(null);
@@ -118,7 +118,7 @@ export default function FumenToolbar() {
     }
   }, [showToast]);
 
-  const actions = [
+  const allActions = [
     { icon: FilePlus, label: t('editor.new'), onClick: newFile },
     { type: 'separator' as const },
     { icon: Camera, label: 'Screenshot', onClick: handleScreenshot },
@@ -132,9 +132,11 @@ export default function FumenToolbar() {
     { type: 'separator' as const },
     { icon: Copy, label: t('editor.copyFumen'), onClick: handleCopy },
     { icon: ClipboardPaste, label: t('editor.importFumen'), onClick: handleImport },
-    { type: 'separator' as const },
     { icon: Trash2, label: t('editor.clearField'), onClick: clearField, danger: true },
   ];
+  const actions = hideScreenshot
+    ? allActions.filter((a: any) => a.label !== 'Screenshot')
+    : allActions;
 
   return (
     <>

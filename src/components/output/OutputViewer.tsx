@@ -414,10 +414,10 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
 
   const handleView = (fumen: string) => {
     try {
-      const key = `fumen-${Date.now()}`;
-      sessionStorage.setItem(key, fumen);
-      const win = new WebviewWindow(key, {
-        url: `/view-fumen?key=${key}`,
+      const encoded = encodeURIComponent(fumen);
+      const url = `/view-fumen#${encoded}`;
+      const win = new WebviewWindow(`fumen-${Date.now()}`, {
+        url,
         title: 'Fumen Viewer',
         width: 720,
         height: 900,

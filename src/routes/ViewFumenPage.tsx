@@ -59,8 +59,7 @@ export default function ViewFumenPage() {
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card shrink-0">
-        <FumenToolbar />
-        <div className="flex items-center gap-2 text-sm ml-auto">
+        <FumenToolbar hideScreenshot />
           <span className="text-muted-foreground">
             {isAllSolutions ? t('view.allSolutions') : t('view.solution')}
           </span>
@@ -68,7 +67,6 @@ export default function ViewFumenPage() {
             {currentPageIndex + 1} / {total}
           </span>
         </div>
-      </div>
 
       {/* Main area */}
       <div className="flex-1 flex items-center justify-center p-4 min-h-0">
