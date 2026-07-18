@@ -72,11 +72,24 @@ interface FumenStore {
   fumenString: string;
   patterns: string;
   clearLine: number;
+  spinFillBottom: number;
+  spinFillTop: number;
+  spinMarginHeight: number;
+  spinLine: number;
+  spinRoof: boolean;
+  spinMaxRoof: number;
+  spinFilter: 'strict' | 'ignore-t' | 'none';
   undoStack: FumenSnapshot[];
   redoStack: FumenSnapshot[];
-
   setPatterns: (patterns: string) => void;
   setClearLine: (n: number) => void;
+  setSpinFillBottom: (n: number) => void;
+  setSpinFillTop: (n: number) => void;
+  setSpinMarginHeight: (n: number) => void;
+  setSpinLine: (n: number) => void;
+  setSpinRoof: (v: boolean) => void;
+  setSpinMaxRoof: (n: number) => void;
+  setSpinFilter: (v: 'strict' | 'ignore-t' | 'none') => void;
   newFile: () => void;
   decodeFumen: (str: string) => boolean;
   encodeFumen: () => string;
@@ -123,11 +136,24 @@ export const useFumenStore = create<FumenStore>((set, get) => ({
   fumenString: '',
   patterns: '',
   clearLine: 4,
+  spinFillBottom: 0,
+  spinFillTop: -1,
+  spinMarginHeight: -1,
+  spinLine: 2,
+  spinRoof: true,
+  spinMaxRoof: -1,
+  spinFilter: 'strict',
   undoStack: [],
   redoStack: [],
-
   setPatterns: (patterns) => set({ patterns }),
   setClearLine: (clearLine) => set({ clearLine }),
+  setSpinFillBottom: (v) => set({ spinFillBottom: v }),
+  setSpinFillTop: (v) => set({ spinFillTop: v }),
+  setSpinMarginHeight: (v) => set({ spinMarginHeight: v }),
+  setSpinLine: (v) => set({ spinLine: v }),
+  setSpinRoof: (v) => set({ spinRoof: v }),
+  setSpinMaxRoof: (v) => set({ spinMaxRoof: v }),
+  setSpinFilter: (v) => set({ spinFilter: v }),
   newFile: () => set({
     pages: [createEmptyFieldPage()],
     currentPageIndex: 0,

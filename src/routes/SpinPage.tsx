@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from '@/stores/appStore';
 import { useCommandStore } from '@/stores/commandStore';
 import { useSfinderCommand } from '@/hooks/useSfinderCommand';
@@ -22,18 +22,24 @@ export default function SpinPage() {
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
-  const [fillBottom, setFillBottom] = useState(1);
-  const [fillTop, setFillTop] = useState(-1);
-  const [marginHeight, setMarginHeight] = useState(-1);
-  const [line, setLine] = useState(2);
-  const [roof, setRoof] = useState(true);
-  const [maxRoof, setMaxRoof] = useState(-1);
-  const [filter, setFilter] = useState<'strict' | 'ignore-t' | 'none'>('strict');
+  const fillBottom = useFumenStore((s) => s.spinFillBottom);
+  const setFillBottom = useFumenStore((s) => s.setSpinFillBottom);
+  const fillTop = useFumenStore((s) => s.spinFillTop);
+  const setFillTop = useFumenStore((s) => s.setSpinFillTop);
+  const marginHeight = useFumenStore((s) => s.spinMarginHeight);
+  const setMarginHeight = useFumenStore((s) => s.setSpinMarginHeight);
+  const line = useFumenStore((s) => s.spinLine);
+  const setLine = useFumenStore((s) => s.setSpinLine);
+  const roof = useFumenStore((s) => s.spinRoof);
+  const setRoof = useFumenStore((s) => s.setSpinRoof);
+  const maxRoof = useFumenStore((s) => s.spinMaxRoof);
+  const setMaxRoof = useFumenStore((s) => s.setSpinMaxRoof);
+  const filter = useFumenStore((s) => s.spinFilter);
+  const setFilter = useFumenStore((s) => s.setSpinFilter);
   const rows = useDisplayStore((s) => s.rows);
   const setRows = useDisplayStore((s) => s.setRows);
   const showRare = useAppStore((s) => s.settings.showRareOptions);
-  useEffect(() => { if (!showRare) setFilter('strict'); }, [showRare]);
-  const t = useT();
+  useEffect(() => { if (!showRare) { setFilter('strict'); setRoof(true); setMaxRoof(-1); } }, [showRare]);
   const ready = javaInfo.installed && jarInfo.found;
 
   return (
@@ -52,7 +58,7 @@ export default function SpinPage() {
       <CommandRunner status={status}
         onExecute={() => execute({
           command: 'spin', tetfu: [editorFumen], patterns,
-          fillBottom: fillBottom - 1, fillTop, marginHeight, line, roof, maxRoof, filter,
+          fillBottom, fillTop, marginHeight, line, roof, maxRoof, filter,
         })}
         onCancel={() => {}} disabled={!ready || !editorFumen || !patterns} />
       {status.type === 'success' && <OutputViewer output={status.output} command="spin" />}

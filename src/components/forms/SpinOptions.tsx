@@ -23,7 +23,7 @@ interface SpinOptionsProps {
 const HelpTooltip = ({ text }: { text: string }) => (
   <div className="group relative inline-flex">
     <HelpCircle className="h-3 w-3 text-muted-foreground/50 cursor-help" />
-    <div className="absolute bottom-full left-0 mb-2 w-56 rounded-md border border-border bg-popover p-2.5
+    <div className="absolute bottom-full left-0 mb-2 w-72 rounded-md border border-border bg-popover p-2.5
       text-xs text-popover-foreground shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible
       transition-all z-50 whitespace-pre-wrap leading-relaxed pointer-events-none">
       {text}
@@ -107,48 +107,54 @@ export default function SpinOptions(props: SpinOptionsProps) {
             </button>
           </div>
         </div>
-        <NumInput label={t('spin.maxRoof')} value={maxRoof} onChange={onMaxRoofChange}
-          min={-1} hint={t('spin.maxRoofHint')} tooltip={t('spin.maxRoofTooltip')} />
-        <div className="space-y-1">
-          <div className="flex items-center gap-1">
-            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-              {t('spin.roof')}
-            </label>
-            <HelpTooltip text={t('spin.roofTooltip')} />
-          </div>
-          <div className="flex gap-1">
-            <button onClick={() => onRoofChange(true)}
-              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                ${roof ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
-              {t('options.yes')}
-            </button>
-            <button onClick={() => onRoofChange(false)}
-              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                ${!roof ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
-              {t('options.no')}
-            </button>
-          </div>
-        </div>
-        {showRare && filter !== undefined && onFilterChange && (
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                {t('spin.filter')}
-              </label>
-              <HelpTooltip text={t('spin.filterTooltip')} />
-            </div>
-            <div className="flex gap-1">
-              {(['strict', 'ignore-t', 'none'] as const).map((val) => (
-                <button key={val} onClick={() => onFilterChange(val)}
-                  className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                    ${filter === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
-                  {{ strict: 'Strict', 'ignore-t': 'Ignore T', none: 'None' }[val]}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+      {showRare && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <NumInput label={t('spin.maxRoof')} value={maxRoof} onChange={onMaxRoofChange}
+              min={-1} hint={t('spin.maxRoofHint')} tooltip={t('spin.maxRoofTooltip')} />
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  {t('spin.roof')}
+                </label>
+                <HelpTooltip text={t('spin.roofTooltip')} />
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => onRoofChange(true)}
+                  className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
+                    ${roof ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                  {t('options.yes')}
+                </button>
+                <button onClick={() => onRoofChange(false)}
+                  className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
+                    ${!roof ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                  {t('options.no')}
+                </button>
+              </div>
+            </div>
+          </div>
+          {filter !== undefined && onFilterChange && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  {t('spin.filter')}
+                </label>
+                <HelpTooltip text={t('spin.filterTooltip')} />
+              </div>
+              <div className="flex gap-1">
+                {(['strict', 'ignore-t', 'none'] as const).map((val) => (
+                  <button key={val} onClick={() => onFilterChange(val)}
+                    className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
+                      ${filter === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                    {{ strict: 'Strict', 'ignore-t': 'Ignore T', none: 'None' }[val]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
