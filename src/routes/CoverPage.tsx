@@ -35,7 +35,7 @@ export default function CoverPage() {
   const javaInfo = useAppStore((s) => s.javaInfo);
   const status = useCommandStore((s) => s.status);
   const clearStatus = useCommandStore((s) => s.clearStatus);
-  const execute = useSfinderCommand();
+  const { execute } = useSfinderCommand();
   useEffect(() => { clearStatus(); }, [clearStatus]);
 
   const editorFumen = useEditorFumen();

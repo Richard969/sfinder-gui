@@ -5,6 +5,7 @@ import { useSfinderCommand } from '@/hooks/useSfinderCommand';
 import { useEditorFumen } from '@/components/fumen/FumenEditorEmbed';
 import { useFumenStore } from '@/stores/fumenStore';
 import { usePageStore } from '@/stores/pageStore';
+import { useT } from '@/i18n/useTranslation';
 import FumenEditorEmbed from '@/components/fumen/FumenEditorEmbed';
 import PatternInput from '@/components/forms/PatternInput';
 import CommandOptions from '@/components/forms/CommandOptions';
@@ -16,10 +17,13 @@ export default function PercentPage() {
   const javaInfo = useAppStore((s) => s.javaInfo);
   const status = useCommandStore((s) => s.status);
   const clearStatus = useCommandStore((s) => s.clearStatus);
-  const execute = useSfinderCommand();
+  const isRunning = status.type === 'running';
+  const { execute, cancel } = useSfinderCommand();
+  useEffect(() => {
+    clearStatus();
+    return () => { if (isRunning) cancel(); };
+  }, [clearStatus, isRunning, cancel]);
   const editorFumen = useEditorFumen();
-  useEffect(() => { clearStatus(); }, [clearStatus]);
-
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
   const currentPageIndex = useFumenStore((s) => s.currentPageIndex);
@@ -31,12 +35,12 @@ export default function PercentPage() {
   const clearLine = useFumenStore((s) => s.clearLine);
   const setClearLine = useFumenStore((s) => s.setClearLine);
   const ready = javaInfo.installed && jarInfo.found;
+  const t = useT();
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
       <FumenEditorEmbed visibleRows={clearLine} onVisibleRowsChange={setClearLine} />
       <PatternInput value={patterns} onChange={setPatterns} />
-
       <CommandOptions
         hold={std.hold} onHoldChange={(v) => update('standard', { hold: v })}
         drop={std.drop} onDropChange={(v) => update('standard', { drop: v })}
@@ -48,7 +52,7 @@ export default function PercentPage() {
           tetfu: editorFumen ? [editorFumen] : [],
           patterns, hold: std.hold, drop: std.drop, kicks: std.kicks, page, clearLine,
         })}
-        onCancel={() => {}} disabled={!ready || !patterns} />
+        onCancel={() => cancel()} disabled={!ready || !patterns} />
       {status.type === 'success' && <OutputViewer output={status.output} command="percent" />}
     </div>
   );

@@ -5,6 +5,7 @@ import { useSfinderCommand } from '@/hooks/useSfinderCommand';
 import { useEditorFumen } from '@/components/fumen/FumenEditorEmbed';
 import { useFumenStore } from '@/stores/fumenStore';
 import { usePageStore } from '@/stores/pageStore';
+import { useT } from '@/i18n/useTranslation';
 import FumenEditorEmbed from '@/components/fumen/FumenEditorEmbed';
 import PatternInput from '@/components/forms/PatternInput';
 import SpinOptions from '@/components/forms/SpinOptions';
@@ -16,8 +17,12 @@ export default function SpinPage() {
   const javaInfo = useAppStore((s) => s.javaInfo);
   const status = useCommandStore((s) => s.status);
   const clearStatus = useCommandStore((s) => s.clearStatus);
-  const execute = useSfinderCommand();
-  useEffect(() => { clearStatus(); }, [clearStatus]);
+  const isRunning = status.type === 'running';
+  const { execute, cancel } = useSfinderCommand();
+  useEffect(() => {
+    clearStatus();
+    return () => { if (isRunning) cancel(); };
+  }, [clearStatus, isRunning, cancel]);
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
@@ -29,6 +34,8 @@ export default function SpinPage() {
   const showRare = useAppStore((s) => s.settings.showRareOptions);
   useEffect(() => { if (!showRare) update('spin', { filter: 'strict', roof: true, maxRoof: -1 }); }, [showRare]);
   const ready = javaInfo.installed && jarInfo.found;
+  const t = useT();
+
   return (
     <div className="max-w-5xl mx-auto space-y-4">
       <FumenEditorEmbed visibleRows={page.rows} onVisibleRowsChange={(v) => update('spin', { rows: v })} />
@@ -51,7 +58,8 @@ export default function SpinPage() {
           marginHeight: page.marginHeight, line: page.line,
           roof: page.roof, maxRoof: page.maxRoof, filter: page.filter,
         })}
-        onCancel={() => {}} disabled={!ready || !patterns} />
+        onCancel={() => cancel()} disabled={!ready || !patterns} />
+      {status.type === 'success' && <OutputViewer output={status.output} command="spin" />}
     </div>
   );
 }

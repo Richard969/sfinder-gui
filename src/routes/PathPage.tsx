@@ -5,6 +5,7 @@ import { useSfinderCommand } from '@/hooks/useSfinderCommand';
 import { useEditorFumen } from '@/components/fumen/FumenEditorEmbed';
 import { useFumenStore } from '@/stores/fumenStore';
 import { usePageStore } from '@/stores/pageStore';
+import { useT } from '@/i18n/useTranslation';
 import FumenEditorEmbed from '@/components/fumen/FumenEditorEmbed';
 import PatternInput from '@/components/forms/PatternInput';
 import CommandOptions from '@/components/forms/CommandOptions';
@@ -16,8 +17,12 @@ export default function PathPage() {
   const javaInfo = useAppStore((s) => s.javaInfo);
   const status = useCommandStore((s) => s.status);
   const clearStatus = useCommandStore((s) => s.clearStatus);
-  const execute = useSfinderCommand();
-  useEffect(() => { clearStatus(); }, [clearStatus]);
+  const isRunning = status.type === 'running';
+  const { execute, cancel } = useSfinderCommand();
+  useEffect(() => {
+    clearStatus();
+    return () => { if (isRunning) cancel(); };
+  }, [clearStatus, isRunning, cancel]);
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
@@ -32,6 +37,8 @@ export default function PathPage() {
   const showRare = useAppStore((s) => s.settings.showRareOptions);
   useEffect(() => { if (!showRare) update('standard', { split: false }); }, [showRare]);
   const ready = javaInfo.installed && jarInfo.found;
+  const t = useT();
+
   return (
     <div className="max-w-5xl mx-auto space-y-4">
       <FumenEditorEmbed visibleRows={clearLine} onVisibleRowsChange={setClearLine} />
@@ -46,7 +53,7 @@ export default function PathPage() {
           tetfu: editorFumen ? [editorFumen] : [],
           patterns, hold: std.hold, drop: std.drop, kicks: std.kicks, format: 'csv', key: 'pattern', page, clearLine, split: std.split,
         })}
-        onCancel={() => {}} disabled={!ready || !patterns} />
+        onCancel={() => cancel()} disabled={!ready || !patterns} />
       {status.type === 'success' && <OutputViewer output={status.output} command="path" />}
     </div>
   );

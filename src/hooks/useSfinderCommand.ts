@@ -4,12 +4,6 @@ import { useAppStore } from '@/stores/appStore';
 import { useCommandStore } from '@/stores/commandStore';
 import type { SfinderCommandConfig, SfinderOutput } from '@/types/sfinder';
 
-/**
- * Hook that returns an execute function which:
- * 1. Merges app settings (jarPath, javaPath) into the config
- * 2. Calls the Rust backend via invoke
- * 3. Updates commandStore with results
- */
 export function useSfinderCommand() {
   const settings = useAppStore((s) => s.settings);
   const setRunning = useCommandStore((s) => s.setRunning);
@@ -38,5 +32,12 @@ export function useSfinderCommand() {
     [settings, setRunning, setSuccess, setError],
   );
 
-  return execute;
+  const cancel = useCallback(async () => {
+    try {
+      await invoke('cancel_command');
+    } catch {}
+    useCommandStore.getState().setCancelled();
+  }, []);
+
+  return { execute, cancel };
 }
