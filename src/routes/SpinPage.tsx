@@ -19,11 +19,8 @@ export default function SpinPage() {
   const clearStatus = useCommandStore((s) => s.clearStatus);
   const isRunning = status.type === 'running';
   const { execute, cancel } = useSfinderCommand();
-  // clear status on mount
-  useEffect(() => { clearStatus(); }, []);
-  // auto-cancel on unmount if running — reads live store state
-  useEffect(() => () => { if (useCommandStore.getState().status.type === 'running') cancel(); }, [cancel]);
   const editorFumen = useEditorFumen();
+  const currentPageIndex = useFumenStore((s) => s.currentPageIndex);
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
   const page = usePageStore((s) => s.spin);
@@ -53,7 +50,7 @@ export default function SpinPage() {
         onExecute={() => execute({
           command: 'spin',
           tetfu: editorFumen ? [editorFumen] : [],
-          patterns,
+          patterns, page: currentPageIndex + 1,
           fillBottom: page.fillBottom, fillTop: page.fillTop,
           marginHeight: page.marginHeight, line: page.line,
           roof: page.roof, maxRoof: page.maxRoof, filter: page.filter,

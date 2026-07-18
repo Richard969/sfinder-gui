@@ -68,8 +68,8 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
         }
     }
 
-    // --page (not valid for cover or spin)
-    if !is_cover && !is_spin {
+    // --page (not valid for cover)
+    if !is_cover {
         if let Some(page) = config.page {
             args.push("--page".to_string());
             args.push(page.to_string());
