@@ -502,7 +502,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     const pages = useMemo(() => {
       try { return decoder.decode(fumen); } catch { return null; }
     }, [fumen]);
-    const field = pages?.[0]?.field;
+    const field = pages?.[pages.length - 1]?.field;
     if (!field) return null;
     let top = 22;
     for (let y = 22; y >= 0; y--) {
