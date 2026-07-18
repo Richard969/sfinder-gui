@@ -137,10 +137,10 @@ export interface SpinEntry {
 export function parseSpin(html: string): SpinEntry[] {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const results: SpinEntry[] = [];
-  const links = doc.querySelectorAll('a[href^="v115@"]');
+  const links = doc.querySelectorAll('a[href*="v115@"]');
   let idx = 0;
   for (const link of links) {
-    const fumen = link.getAttribute('href') ?? '';
+    const fumen = (link.getAttribute('href') ?? '').replace(/^https?:\/\/fumen\.zui\.jp\/\?/, '');
     const parent = link.closest('li') ?? link.parentElement;
     const line = (parent?.textContent ?? link.textContent ?? '').trim();
     const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
