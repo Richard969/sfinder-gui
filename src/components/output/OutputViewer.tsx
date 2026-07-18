@@ -7,7 +7,7 @@ import RawOutput from './RawOutput';
 import PercentDisplay from './PercentDisplay';
 import { Search } from 'lucide-react';
 import { useT } from '@/i18n/useTranslation';
-import { parseCoverage, parseSpin } from '@/lib/output-parser';
+import { parseCoverage, parseSpin, getSpinCategoryCounts } from '@/lib/output-parser';
 import type { SpinEntry } from '@/lib/output-parser';
 
 interface OutputViewerProps {
@@ -411,6 +411,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   }, [output.strictMinimal]);
   const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
   const spinRows = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
+  const spinCats = useMemo(() => getSpinCategoryCounts(htmlOutput), [htmlOutput]);
 
   const handleView = (fumen: string) => {
     try {
@@ -646,7 +647,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
                 ['double-[mini]',    'Double [Mini]',    'border-cyan-500/40 bg-cyan-500/5'],
                 ['triple-[regular]', 'Triple [Regular]', 'border-purple-500/40 bg-purple-500/5'],
               ] as const).map(([cat, label, color]) => {
-                const count = spinRows.filter((r) => r.category === cat).length;
+                const count = spinCats[cat] || 0;
                 if (count === 0) return null;
                 return (
                   <div key={cat} className={`rounded-lg border p-3 flex flex-col items-center gap-0.5 ${color}`}>
@@ -658,22 +659,10 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
             </div>
             <div className="flex justify-center">
               <button onClick={() => {
-                const allPages: any[] = [];
-                for (const r of spinRows) {
-                  if (!r.fumen) continue;
-                  try {
-                    const decoded = decoder.decode(r.fumen);
-                    if (!decoded || decoded.length === 0) continue;
-                    for (let i = 0; i < decoded.length; i++) {
-                      const p = decoded[i];
-                      allPages.push({ field: p.field, comment: i === 0 ? r.operations : (p.comment || ''), operation: p.operation, flags: p.flags });
-                    }
-                  } catch {}
-                }
-                if (allPages.length > 0) {
-                  const encoded = encoder.encode(allPages);
-                  if (encoded) handleView(encoded);
-                }
+                const fumens = spinRows.map((r) => r.fumen).filter(Boolean) as string[];
+                if (fumens.length === 0) return;
+                const combined = combineFumens(fumens.map((f) => ({ fumen: f, coverage: 0 })), fumens.length);
+                if (combined) handleView(combined);
               }} className="rounded-md bg-primary/15 px-5 py-2 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
                 {t('output.viewAll')}
               </button>
