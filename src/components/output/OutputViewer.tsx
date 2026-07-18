@@ -680,7 +680,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         {!failed && activeTab === 'minimal' && command === 'cover' && (
           <SolutionTable solutions={minimal} label="minimal" />
         )}
-        {!failed && activeTab === 'solutions' && command !== 'path' && command !== 'cover' && (
+        {!failed && activeTab === 'solutions' && command !== 'path' && command !== 'cover' && command !== 'spin' && (
           <SolutionTable solutions={[...unique, ...minimal]} label="all" />
         )}
         {!failed && activeTab === 'stdout' && <RawOutput text={output.stdout || '(empty)'} />}
