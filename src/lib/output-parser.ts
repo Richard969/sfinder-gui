@@ -132,11 +132,36 @@ export interface SpinEntry {
   clear: number;
   hole: number;
   piece: number;
+  category: string; // 'single-[regular]', 'double-[mini]', etc.
 }
 
 export function parseSpin(html: string): SpinEntry[] {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const results: SpinEntry[] = [];
+  // Try section-based parsing first (spin output organizes by T-spin type)
+  const sections = doc.querySelectorAll('section');
+  if (sections.length > 0) {
+    let idx = 0;
+    for (const section of sections) {
+      const category = section.id || '';
+      const divs = section.querySelectorAll('div');
+      for (const div of divs) {
+        const link = div.querySelector('a[href^="http"]');
+        const fumen = link?.getAttribute('href')?.replace('http://fumen.zui.jp/?', '') ?? '';
+        const line = div.textContent?.trim() ?? '';
+        const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
+        if (!statsMatch) continue;
+        const markMatch = line.match(/^\[([OX\-])\]/);
+        const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
+        const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').trim();
+        results.push({ index: idx++, operations: ops, mark, fumen,
+          clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]),
+          category });
+      }
+    }
+    return results;
+  }
+  // Fallback: anchor-based parsing (for non-section HTML)
   const links = doc.querySelectorAll('a[href^="v115@"]');
   let idx = 0;
   for (const link of links) {
@@ -149,9 +174,11 @@ export function parseSpin(html: string): SpinEntry[] {
     const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
     const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').replace(/<[^>]*>/g, '').trim();
     results.push({ index: idx++, operations: ops, mark, fumen,
-      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
+      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]),
+      category: '' });
   }
   if (results.length > 0) return results;
+  // Last resort: plain-text line parsing
   for (const line of html.split('\n')) {
     const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
     if (!statsMatch) continue;
@@ -159,7 +186,8 @@ export function parseSpin(html: string): SpinEntry[] {
     const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
     const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').trim();
     results.push({ index: idx++, operations: ops, mark, fumen: '',
-      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
+      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]),
+      category: '' });
   }
   return results;
 }
