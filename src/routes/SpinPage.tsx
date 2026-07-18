@@ -22,7 +22,7 @@ export default function SpinPage() {
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
-  const [fillBottom, setFillBottom] = useState(0);
+  const [fillBottom, setFillBottom] = useState(1);
   const [fillTop, setFillTop] = useState(-1);
   const [marginHeight, setMarginHeight] = useState(-1);
   const [line, setLine] = useState(2);
@@ -52,7 +52,7 @@ export default function SpinPage() {
       <CommandRunner status={status}
         onExecute={() => execute({
           command: 'spin', tetfu: [editorFumen], patterns,
-          fillBottom, fillTop, marginHeight, line, roof, maxRoof, filter,
+          fillBottom: fillBottom - 1, fillTop, marginHeight, line, roof, maxRoof, filter,
         })}
         onCancel={() => {}} disabled={!ready || !editorFumen || !patterns} />
       {status.type === 'success' && <OutputViewer output={status.output} command="spin" />}
