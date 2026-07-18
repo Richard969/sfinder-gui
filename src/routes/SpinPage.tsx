@@ -31,6 +31,8 @@ export default function SpinPage() {
   const [filter, setFilter] = useState<'strict' | 'ignore-t' | 'none'>('strict');
   const rows = useDisplayStore((s) => s.rows);
   const setRows = useDisplayStore((s) => s.setRows);
+  const showRare = useAppStore((s) => s.settings.showRareOptions);
+  useEffect(() => { if (!showRare) setFilter('strict'); }, [showRare]);
   const t = useT();
   const ready = javaInfo.installed && jarInfo.found;
 

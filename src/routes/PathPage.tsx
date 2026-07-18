@@ -30,7 +30,8 @@ export default function PathPage() {
   const clearLine = useFumenStore((s) => s.clearLine);
   const setClearLine = useFumenStore((s) => s.setClearLine);
   const [split, setSplit] = useState(false);
-  const t = useT();
+  const showRare = useAppStore((s) => s.settings.showRareOptions);
+  useEffect(() => { if (!showRare) setSplit(false); }, [showRare]);
   const ready = javaInfo.installed && jarInfo.found;
 
   return (
@@ -38,7 +39,8 @@ export default function PathPage() {
       <FumenEditorEmbed visibleRows={clearLine} onVisibleRowsChange={setClearLine} />
       <PatternInput value={patterns} onChange={setPatterns} />
       <CommandOptions hold={hold} onHoldChange={setHold} drop={drop} onDropChange={setDrop}
-        kicksPath={kicksPath} onKicksPathChange={setKicksPath} split={split} onSplitChange={setSplit} />
+        kicksPath={kicksPath} onKicksPathChange={setKicksPath}
+        {...(showRare ? { split, onSplitChange: setSplit } : {})} />
       <CommandRunner status={status}
         onExecute={() => execute({ command: 'path', tetfu: [editorFumen], patterns, hold, drop, kicks: kicksPath, format: 'csv', key: 'pattern', page, clearLine, split })}
         onCancel={() => {}} disabled={!ready || !editorFumen || !patterns} />
