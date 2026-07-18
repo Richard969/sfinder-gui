@@ -15,11 +15,23 @@ export default function Header() {
     '/spin': t('sidebar.spin'),
     '/cover': t('sidebar.cover'),
   };
+  const routeDesc: Record<string, string> = {
+    '/percent': t('percent.desc'),
+    '/path': t('path.desc'),
+    '/setup': t('setup.desc'),
+    '/ren': t('ren.desc'),
+    '/spin': t('spin.desc'),
+    '/cover': t('cover.desc'),
+  };
   const title = routeTitles[location.pathname] ?? 'sfinder-gui';
+  const desc = routeDesc[location.pathname] ?? '';
 
   return (
-    <header className="flex h-14 shrink-0 items-center border-b border-border bg-card/50 px-6">
-      <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card/50 px-6">
+      <div className="flex items-center gap-3 min-w-0">
+        <h1 className="text-lg font-semibold tracking-tight shrink-0">{title}</h1>
+        {desc && <p className="text-sm text-muted-foreground/70">{desc}</p>}
+      </div>
     </header>
   );
 }

@@ -43,14 +43,15 @@ impl CommandState {
         *self.child.lock().unwrap() = None;
     }
 }
-
 /// Build the CLI argument vector from the command config
 fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
     let mut args = Vec::new();
-    let is_cover = config.command == "cover";
+    let cmd = config.command.as_str();
+    let is_cover = cmd == "cover";
+    let is_spin = cmd == "spin";
 
     // --output-base
-    if let Some(ref output_base) = config.output_base {
+    if let Some(output_base) = &config.output_base {
         if !output_base.is_empty() {
             args.push("--output-base".to_string());
             args.push(output_base.clone());
@@ -67,16 +68,21 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
         }
     }
 
-    // --page (not valid for cover)
-    if !is_cover {
+    // --page (not valid for cover or spin)
+    if !is_cover && !is_spin {
         if let Some(page) = config.page {
             args.push("--page".to_string());
             args.push(page.to_string());
         }
     }
 
-    // --clear-line / --max-clearline (cover uses different flag)
-    if let Some(cl) = config.clear_line {
+    // --clear-line / --max-clearline (cover) / --line (spin)
+    if is_spin {
+        if let Some(line) = config.line {
+            args.push("--line".to_string());
+            args.push(line.to_string());
+        }
+    } else if let Some(cl) = config.clear_line {
         if is_cover {
             args.push("--max-clearline".to_string());
         } else {
@@ -86,34 +92,40 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
     }
 
     // --patterns
-    if let Some(ref patterns) = config.patterns {
+    if let Some(patterns) = &config.patterns {
         if !patterns.is_empty() {
             args.push("--patterns".to_string());
             args.push(patterns.clone());
         }
     }
 
-    // --hold
-    if let Some(ref hold) = config.hold {
-        args.push("--hold".to_string());
-        args.push(hold.clone());
+    // --hold (not valid for spin)
+    if !is_spin {
+        if let Some(hold) = &config.hold {
+            args.push("--hold".to_string());
+            args.push(hold.clone());
+        }
     }
 
-    // --drop
-    if let Some(ref drop) = config.drop {
-        args.push("--drop".to_string());
-        args.push(drop.clone());
+    // --drop (not valid for spin)
+    if !is_spin {
+        if let Some(drop) = &config.drop {
+            args.push("--drop".to_string());
+            args.push(drop.clone());
+        }
     }
 
-    // --kicks
-    if let Some(ref kicks) = config.kicks {
-        args.push("--kicks".to_string());
-        args.push(kicks.clone());
+    // --kicks (not valid for spin: SRS only)
+    if !is_spin {
+        if let Some(kicks) = &config.kicks {
+            args.push("--kicks".to_string());
+            args.push(kicks.clone());
+        }
     }
 
-    // --format (not valid for cover)
-    if !is_cover {
-        if let Some(ref format) = config.format {
+    // --format (not valid for cover or spin)
+    if !is_cover && !is_spin {
+        if let Some(format) = &config.format {
             if !format.is_empty() {
                 args.push("--format".to_string());
                 args.push(format.clone());
@@ -121,18 +133,16 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
         }
     }
 
-    // --split (not valid for cover)
-    if !is_cover
-        && config.split.unwrap_or(false) {
-            args.push("--split".to_string());
-            args.push("yes".to_string());
-        }
+    // --split
+    if config.split.unwrap_or(false) {
+        args.push("--split".to_string());
+        args.push("yes".to_string());
+    }
 
     // --specified-only (not valid for cover)
-    if !is_cover
-        && config.specified_only.unwrap_or(false) {
-            args.push("--specified-only".to_string());
-        }
+    if !is_cover && config.specified_only.unwrap_or(false) {
+        args.push("--specified-only".to_string());
+    }
 
     // --reserved
     if config.reserved.unwrap_or(false) {
@@ -140,7 +150,7 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
     }
 
     // --field-path
-    if let Some(ref field_path) = config.field_path {
+    if let Some(field_path) = &config.field_path {
         if !field_path.is_empty() {
             args.push("--field-path".to_string());
             args.push(field_path.clone());
@@ -148,7 +158,7 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
     }
 
     // --patterns-path
-    if let Some(ref patterns_path) = config.patterns_path {
+    if let Some(patterns_path) = &config.patterns_path {
         if !patterns_path.is_empty() {
             args.push("--patterns-path".to_string());
             args.push(patterns_path.clone());
@@ -167,9 +177,9 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
         args.push(max_layer.to_string());
     }
 
-    // --key (not valid for cover)
-    if !is_cover {
-        if let Some(ref key) = config.key {
+    // --key (not valid for cover or spin)
+    if !is_cover && !is_spin {
+        if let Some(key) = &config.key {
             args.push("--key".to_string());
             args.push(key.clone());
         }
@@ -177,10 +187,60 @@ fn build_cli_args(config: &SfinderCommandConfig) -> Vec<String> {
 
     // --mode (cover only: normal / tspin)
     if is_cover {
-        if let Some(ref mode) = config.mode {
+        if let Some(mode) = &config.mode {
             if !mode.is_empty() {
                 args.push("--mode".to_string());
                 args.push(mode.clone());
+            }
+        }
+    }
+
+    // --fill-bottom (spin only)
+    if is_spin {
+        if let Some(fb) = config.fill_bottom {
+            args.push("--fill-bottom".to_string());
+            args.push(fb.to_string());
+        }
+    }
+
+    // --fill-top (spin only)
+    if is_spin {
+        if let Some(ft) = config.fill_top {
+            args.push("--fill-top".to_string());
+            args.push(ft.to_string());
+        }
+    }
+
+    // --margin-height (spin only)
+    if is_spin {
+        if let Some(mh) = config.margin_height {
+            args.push("--margin-height".to_string());
+            args.push(mh.to_string());
+        }
+    }
+
+    // --roof (spin only)
+    if is_spin {
+        if let Some(roof) = config.roof {
+            args.push("--roof".to_string());
+            args.push(if roof { "yes".to_string() } else { "no".to_string() });
+        }
+    }
+
+    // --max-roof (spin only)
+    if is_spin {
+        if let Some(mr) = config.max_roof {
+            args.push("--max-roof".to_string());
+            args.push(mr.to_string());
+        }
+    }
+
+    // --filter (spin only)
+    if is_spin {
+        if let Some(filter) = &config.filter {
+            if !filter.is_empty() {
+                args.push("--filter".to_string());
+                args.push(filter.clone());
             }
         }
     }

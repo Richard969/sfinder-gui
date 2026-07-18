@@ -55,6 +55,21 @@ pub struct SfinderCommandConfig {
     pub mode: Option<String>,
     #[serde(rename = "coverLogic")]
     pub cover_logic: Option<String>,
+    // spin-specific
+    #[serde(rename = "fillBottom")]
+    pub fill_bottom: Option<i32>,
+    #[serde(rename = "fillTop")]
+    pub fill_top: Option<i32>,
+    #[serde(rename = "marginHeight")]
+    pub margin_height: Option<i32>,
+    #[serde(rename = "roof")]
+    pub roof: Option<bool>,
+    #[serde(rename = "maxRoof")]
+    pub max_roof: Option<i32>,
+    #[serde(rename = "filter")]
+    pub filter: Option<String>,
+    #[serde(rename = "line")]
+    pub line: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

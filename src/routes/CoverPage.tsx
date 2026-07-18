@@ -4,6 +4,7 @@ import { useCommandStore } from '@/stores/commandStore';
 import { useSfinderCommand } from '@/hooks/useSfinderCommand';
 import { useEditorFumen } from '@/components/fumen/FumenEditorEmbed';
 import { useFumenStore } from '@/stores/fumenStore';
+import { useDisplayStore } from '@/stores/displayStore';
 import { useT } from '@/i18n/useTranslation';
 import { Field, encoder } from 'tetris-fumen';
 import type { EncodePage } from 'tetris-fumen';
@@ -48,7 +49,8 @@ export default function CoverPage() {
   const [drop, setDrop] = useState<DropType>('softdrop');
   const [kicksPath, setKicksPath] = useState('srs');
   const clearLine = useFumenStore((s) => s.clearLine);
-  const setClearLine = useFumenStore((s) => s.setClearLine);
+  const rows = useDisplayStore((s) => s.rows);
+  const setRows = useDisplayStore((s) => s.setRows);
   const [mode, setMode] = useState('normal');
   const [coverLogic, setCoverLogic] = useState<CoverLogic>('or');
   const [trimWarning, setTrimWarning] = useState<string | null>(null);
@@ -58,9 +60,8 @@ export default function CoverPage() {
 
   /// Build one tetfu per page.
   /// Each tetfu = one placement pattern (may be multi-page if auto-split).
-  /// Trims field to maxRows, warns if content exceeds.
   async function buildTetfus(): Promise<string[]> {
-    const maxRows = clearLine + 4;
+    const maxRows = rows + 4;
     setTrimWarning(null);
     const tetfus: string[] = [];
 
@@ -177,15 +178,9 @@ export default function CoverPage() {
       );
     }
   }, [pages, editorFumen, patterns, hold, drop, kicksPath, mode, clearLine, execute, t]);
-
   return (
     <div className="max-w-5xl mx-auto space-y-4">
-      <div className="space-y-1">
-        <h2 className="text-xl font-semibold">{t('cover.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('cover.desc')}</p>
-      </div>
-
-      <FumenEditorEmbed visibleRows={clearLine} onVisibleRowsChange={setClearLine} />
+      <FumenEditorEmbed visibleRows={rows} onVisibleRowsChange={setRows} />
 
       <PatternInput value={patterns} onChange={setPatterns} />
 

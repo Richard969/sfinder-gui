@@ -7,7 +7,8 @@ import RawOutput from './RawOutput';
 import PercentDisplay from './PercentDisplay';
 import { Search } from 'lucide-react';
 import { useT } from '@/i18n/useTranslation';
-import { parseCoverage } from '@/lib/output-parser';
+import { parseCoverage, parseSpin } from '@/lib/output-parser';
+import type { SpinEntry } from '@/lib/output-parser';
 
 interface OutputViewerProps {
   output: SfinderOutput;
@@ -409,6 +410,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     return (output.strictMinimal || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.strictMinimal]);
   const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
+  const spinRows = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
 
   const handleView = (fumen: string) => {
     try {
@@ -481,6 +483,58 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
       </div>
     );
   };
+  const SpinTable = ({ rows }: { rows: SpinEntry[] }) => {
+    const filtered = useMemo(() => {
+      const q = search.trim().toLowerCase();
+      return q ? rows.filter((s) => s.operations.toLowerCase().includes(q)) : rows;
+    }, [rows, search]);
+    if (rows.length === 0) return <p className="text-sm text-muted-foreground">{t('spin.noSpin')}</p>;
+    const markIcon = (m: string) => m === 'O' ? '✓' : m === 'X' ? '✗' : '-';
+    const markColor = (m: string) => m === 'O' ? 'text-green-400' : m === 'X' ? 'text-red-400' : 'text-muted-foreground';
+    return (
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('output.filter')}
+            className="w-full rounded border border-input bg-background pl-7 pr-2 py-1 text-xs
+              placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div className="rounded-md border border-border overflow-hidden max-h-[400px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-secondary/50 sticky top-0">
+              <tr>
+                <th className="px-2 py-1.5 text-left font-medium text-muted-foreground w-8">#</th>
+                <th className="px-2 py-1.5 text-left font-medium text-muted-foreground w-10">Mark</th>
+                <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">{t('output.operations')}</th>
+                <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-12">{t('spin.clear')}</th>
+                <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-12">{t('spin.hole')}</th>
+                <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-12">{t('spin.piece')}</th>
+                <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-16">{t('output.view')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filtered.map((s, i) => (
+                <tr key={i} className="hover:bg-secondary/30">
+                  <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                  <td className={`px-2 py-1 font-mono font-bold ${markColor(s.mark)}`}>{markIcon(s.mark)}</td>
+                  <td className="px-2 py-1 font-mono">{s.operations}</td>
+                  <td className="px-2 py-1 text-center">{s.clear}</td>
+                  <td className="px-2 py-1 text-center">{s.hole}</td>
+                  <td className="px-2 py-1 text-center">{s.piece}</td>
+                  <td className="px-2 py-1 text-center">
+                    {s.fumen && (<button onClick={() => handleView(s.fumen!)}
+                      className="text-[10px] px-2 py-0.5 rounded bg-primary/15 text-primary hover:bg-primary/25 font-medium">
+                      {t('output.view')}
+                    </button>)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
 
   const tabs: { id: TabId; label: string }[] = [];
   const failed = output.exitCode !== 0;
@@ -495,6 +549,10 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
   } else if (command === 'percent') {
     tabs.push({ id: 'summary', label: t('output.summary') });
+    tabs.push({ id: 'stdout', label: t('output.stdout') });
+  } else if (command === 'spin') {
+    tabs.push({ id: 'summary', label: t('output.summary') });
+    if (spinRows.length > 0) tabs.push({ id: 'solutions', label: `${t('spin.solutionCount')} (${spinRows.length})` });
     tabs.push({ id: 'stdout', label: t('output.stdout') });
     if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
   } else if (command === 'cover') {
@@ -539,6 +597,18 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         )}
         {!failed && activeTab === 'summary' && command === 'cover' && (
           <CoverSummary output={output} t={t} coverLogic={coverLogic} />
+        )}
+        {!failed && activeTab === 'summary' && command === 'spin' && spinRows.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+            <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
+            <div className="text-2xl font-bold text-foreground">{spinRows.length}</div>
+          </div>
+        )}
+        {!failed && activeTab === 'summary' && command === 'spin' && spinRows.length === 0 && (
+          <div className="text-sm text-muted-foreground">{t('spin.noSpin')}</div>
+        )}
+        {!failed && activeTab === 'solutions' && command === 'spin' && (
+          <SpinTable rows={spinRows} />
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />

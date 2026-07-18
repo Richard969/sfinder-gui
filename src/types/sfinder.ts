@@ -19,7 +19,7 @@ export type HoldOption = 'use' | 'avoid';
 
 // --- Output format ---
 export type OutputFormat = 'html' | 'csv';
-
+export type FilterType = 'strict' | 'ignore-t' | 'none';
 // --- CSV sort key ---
 export type CsvKey = 'solution' | 'pattern' | 'use';
 
@@ -47,7 +47,15 @@ export interface SfinderCommandConfig {
   key?: CsvKey;
   mode?: string;
   coverLogic?: 'or' | 'and';
-}
+  // spin-specific
+  fillBottom?: number;
+  fillTop?: number;
+  marginHeight?: number;
+  roof?: boolean;
+  maxRoof?: number;
+  filter?: 'strict' | 'ignore-t' | 'none';
+  line?: number;
+ }
 
 // --- Output from Rust backend ---
 export interface PathResultEntry {

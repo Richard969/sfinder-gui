@@ -123,3 +123,43 @@ export function parseCsv(csvText: string): { headers: string[]; rows: string[][]
 
   return { headers, rows };
 }
+
+export interface SpinEntry {
+  index: number;
+  operations: string;
+  mark: 'O' | 'X' | '-';
+  fumen?: string;
+  clear: number;
+  hole: number;
+  piece: number;
+}
+
+export function parseSpin(html: string): SpinEntry[] {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const results: SpinEntry[] = [];
+  const links = doc.querySelectorAll('a[href^="v115@"]');
+  let idx = 0;
+  for (const link of links) {
+    const fumen = link.getAttribute('href') ?? '';
+    const parent = link.closest('li') ?? link.parentElement;
+    const line = (parent?.textContent ?? link.textContent ?? '').trim();
+    const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
+    if (!statsMatch) continue;
+    const markMatch = line.match(/^\[([OX\-])\]/);
+    const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
+    const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').replace(/<[^>]*>/g, '').trim();
+    results.push({ index: idx++, operations: ops, mark, fumen,
+      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
+  }
+  if (results.length > 0) return results;
+  for (const line of html.split('\n')) {
+    const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
+    if (!statsMatch) continue;
+    const markMatch = line.match(/^\[([OX\-])\]/);
+    const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
+    const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').trim();
+    results.push({ index: idx++, operations: ops, mark, fumen: '',
+      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
+  }
+  return results;
+}
