@@ -2,8 +2,6 @@
  * Parse sfinder CLI output into structured data for display.
  */
 
-import { decoder } from 'tetris-fumen';
-
 export interface PercentResult {
   percentage: number;
   numerator?: number;
@@ -22,26 +20,43 @@ export interface CoverResult {
   overallRatio: number;
   numerator?: number;
   denominator?: number;
-  or?: { pct: string; fraction: string };
-  and?: { pct: string; fraction: string };
 }
 
+/**
+ * Extract percentage from stdout (percent command).
+ * Matches patterns like:
+ *   "84.64% (711/840)"
+ *   "Success: 84.64%"
+ */
 export function parsePercent(stdout: string): PercentResult | null {
-  const match = stdout.match(/(\d+\.?\d*)\s*%\s*\[(\d+)\/(\d+)\]/);
-  if (match) {
-    return {
-      percentage: parseFloat(match[1]),
-      numerator: parseInt(match[2]),
-      denominator: parseInt(match[3]),
-    };
+  const patterns = [
+    /(\d+\.?\d*)\s*%\s*\(\s*(\d+)\s*\/\s*(\d+)\s*\)/i,
+    /(?:success|rate)\s*[:=]\s*(\d+\.?\d*)\s*%/i,
+    /(\d+\.?\d*)\s*%/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = stdout.match(pattern);
+    if (match) {
+      return {
+        percentage: parseFloat(match[1]),
+        numerator: match[2] ? parseInt(match[2]) : undefined,
+        denominator: match[3] ? parseInt(match[3]) : undefined,
+      };
+    }
   }
   return null;
 }
 
+/**
+ * Extract solutions from stdout (path/setup/ren/spin/cover commands).
+ * Matches: "OP1 OP2 OP3 / XX.X % [NNN]"
+ */
 export function parseSolutions(stdout: string): SolutionEntry[] {
   const results: SolutionEntry[] = [];
   const lines = stdout.split('\n');
   let idx = 0;
+
   for (const line of lines) {
     const match = line.match(/([\w\-\s]+)\s*\/\s*(\d+\.?\d*)\s*%\s*\[(\d+)\]/);
     if (match) {
@@ -53,9 +68,14 @@ export function parseSolutions(stdout: string): SolutionEntry[] {
       });
     }
   }
+
   return results;
 }
 
+/**
+ * Extract overall ratio from coverage output.
+ * Matches: "OR = 72.46 % [3652/5040]"
+ */
 export function parseCoverage(stdout: string): CoverResult | null {
   const match = stdout.match(/OR\s*=\s*(\d+\.?\d*)\s*%\s*\[(\d+)\/(\d+)\]/i);
   if (match) {
@@ -68,26 +88,39 @@ export function parseCoverage(stdout: string): CoverResult | null {
   return null;
 }
 
+/**
+ * Parse verify kicks output.
+ * Returns array of { kick: string, valid: boolean } entries.
+ */
 export function parseKickVerification(stdout: string): { kick: string; valid: boolean }[] {
   const results: { kick: string; valid: boolean }[] = [];
   const lines = stdout.split('\n');
+
   for (const line of lines) {
+    // Match lines like "KICK_X_Y: OK" or "KICK_X_Y: FAIL"
     const okMatch = line.match(/(.+?):\s*(OK|PASS)/i);
     const failMatch = line.match(/(.+?):\s*(FAIL|ERROR)/i);
+
     if (okMatch) {
       results.push({ kick: okMatch[1].trim(), valid: true });
     } else if (failMatch) {
       results.push({ kick: failMatch[1].trim(), valid: false });
     }
   }
+
   return results;
 }
 
+/**
+ * Parse CSV text into array of objects.
+ */
 export function parseCsv(csvText: string): { headers: string[]; rows: string[][] } {
   const lines = csvText.trim().split('\n');
   if (lines.length === 0) return { headers: [], rows: [] };
+
   const headers = lines[0].split(',').map((h) => h.trim());
   const rows = lines.slice(1).map((line) => line.split(',').map((c) => c.trim()));
+
   return { headers, rows };
 }
 
@@ -99,41 +132,26 @@ export interface SpinEntry {
   clear: number;
   hole: number;
   piece: number;
-  /** T-spin category: 'single-regular' | 'single-mini' | 'double-regular' | 'double-mini' | 'triple-regular' | '' */
-  category: string;
 }
 
 export function parseSpin(html: string): SpinEntry[] {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const results: SpinEntry[] = [];
+  const links = doc.querySelectorAll('a[href^="v115@"]');
   let idx = 0;
-
-  // Find all sections (each section is a T-spin category)
-  const sections = doc.querySelectorAll('section');
-  for (const section of sections) {
-    const category = section.id || '';
-    const divs = section.querySelectorAll('div');
-    for (const div of divs) {
-      const link = div.querySelector('a[href^="http"]');
-      const fumen = link?.getAttribute('href') ?? '';
-      const line = div.textContent?.trim() ?? '';
-      const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
-      if (!statsMatch) continue;
-      const markMatch = line.match(/^\[([OX\-])\]/);
-      const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
-      const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').trim();
-      results.push({
-        index: idx++, operations: ops, mark,
-        fumen: fumen.replace('http://fumen.zui.jp/?', ''),
-        clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]),
-        piece: parseInt(statsMatch[3]), category,
-      });
-    }
+  for (const link of links) {
+    const fumen = link.getAttribute('href') ?? '';
+    const parent = link.closest('li') ?? link.parentElement;
+    const line = (parent?.textContent ?? link.textContent ?? '').trim();
+    const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
+    if (!statsMatch) continue;
+    const markMatch = line.match(/^\[([OX\-])\]/);
+    const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
+    const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').replace(/<[^>]*>/g, '').trim();
+    results.push({ index: idx++, operations: ops, mark, fumen,
+      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
   }
-
   if (results.length > 0) return results;
-
-  // Fallback: plain-text lines
   for (const line of html.split('\n')) {
     const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
     if (!statsMatch) continue;
@@ -141,8 +159,7 @@ export function parseSpin(html: string): SpinEntry[] {
     const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
     const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').trim();
     results.push({ index: idx++, operations: ops, mark, fumen: '',
-      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]),
-      piece: parseInt(statsMatch[3]), category: '' });
+      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
   }
   return results;
 }

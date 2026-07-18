@@ -12,10 +12,14 @@ export default function ViewFumenPage() {
   const pages = useFumenStore((s) => s.pages);
   const currentPageIndex = useFumenStore((s) => s.currentPageIndex);
   const goToPage = useFumenStore((s) => s.goToPage);
-  // Manual decode — URLSearchParams mangles + signs
-  const fumenStr = decodeURIComponent(
-    window.location.search.replace(/^.*[?&]fumen=([^&]*).*$/, '$1')
-  );
+  // Read from sessionStorage (set by OutputViewer) or URL param
+  const params = new URLSearchParams(window.location.search);
+  const storageKey = params.get('key');
+  const fumenStr = storageKey
+    ? sessionStorage.getItem(storageKey) || ''
+    : decodeURIComponent(
+        window.location.search.replace(/^.*[?&]fumen=([^&]*).*$/, '$1')
+      );
 
   useEffect(() => {
     if (fumenStr) decodeFumen(fumenStr);

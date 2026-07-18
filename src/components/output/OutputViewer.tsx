@@ -414,10 +414,10 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
 
   const handleView = (fumen: string) => {
     try {
-      const base = window.location.origin;
-      const url = `${base}/view-fumen?fumen=${encodeURIComponent(fumen)}`;
-      const win = new WebviewWindow(`fumen-${Date.now()}`, {
-        url,
+      const key = `fumen-${Date.now()}`;
+      sessionStorage.setItem(key, fumen);
+      const win = new WebviewWindow(key, {
+        url: `/view-fumen?key=${key}`,
         title: 'Fumen Viewer',
         width: 720,
         height: 900,
@@ -638,43 +638,14 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
               <div className="text-3xl font-bold text-foreground">{spinRows.length}</div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {( [
-                ['single-[regular]', 'Single [Regular]', 'border-green-500/40 bg-green-500/5'],
-                ['single-[mini]',    'Single [Mini]',    'border-emerald-500/40 bg-emerald-500/5'],
-                ['double-[regular]', 'Double [Regular]', 'border-blue-500/40 bg-blue-500/5'],
-                ['double-[mini]',    'Double [Mini]',    'border-cyan-500/40 bg-cyan-500/5'],
-                ['triple-[regular]', 'Triple [Regular]', 'border-purple-500/40 bg-purple-500/5'],
-              ] as const).map(([cat, label, color]) => {
-                const count = spinRows.filter((r) => r.category === cat).length;
-                if (count === 0) return null;
-                return (
-                  <div key={cat} className={`rounded-lg border p-3 flex flex-col items-center gap-0.5 ${color}`}>
-                    <span className="text-[10px] font-medium opacity-70">{label}</span>
-                    <span className="text-lg font-bold">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex justify-center">
-              <button onClick={() => {
-                try {
-                  const allPages: any[] = [];
-                  for (const r of spinRows) {
-                    if (!r.fumen) continue;
-                    const decoded = decoder.decode(r.fumen);
-                    if (!decoded || decoded.length === 0) continue;
-                    for (let i = 0; i < decoded.length; i++) {
-                      const p = decoded[i];
-                      allPages.push({ field: p.field, comment: i === 0 ? r.operations : (p.comment || ''), operation: p.operation, flags: p.flags });
-                    }
-                  }
-                  if (allPages.length > 0) handleView(encoder.encode(allPages));
-                } catch (e) { console.error('combine spin:', e); }
-              }} className="rounded-md bg-primary/15 px-5 py-2 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
-                {t('output.viewAll')}
-              </button>
-            </div>
+            <button onClick={() => {
+              const fumens = spinRows.map((r) => r.fumen).filter(Boolean) as string[];
+              if (fumens.length === 0) return;
+              const combined = combineFumens(fumens.map((f) => ({ fumen: f, coverage: 0 })), fumens.length);
+              if (combined) handleView(combined);
+            }} className="w-full rounded-md bg-primary/15 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
+              {t('output.viewAll')}
+            </button>
           </div>
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && command !== 'spin' && (
