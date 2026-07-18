@@ -130,17 +130,19 @@ const en = {
   },
   percent: {
     title: 'Percent',
-    desc: 'Calculate PC success rate. Ex: *p4 shows % per first piece draw.',
+    desc: 'Calculate PC success rate.',
     nearGuaranteed: 'Near guaranteed',
     highlyConsistent: 'Highly consistent',
     reliable: 'Reliable',
     inconsistent: 'Inconsistent',
     unreliable: 'Unreliable',
     sequences: 'sequences successful',
+    usage: 'Usage:\n  *p4       → prob for any 4-draw\n  *p7       → full bag (5040)\n  I,*p4     → hold I, draw 4\n  T,O,I     → specific order\n  --hold avoid → no hold',
   },
   path: {
     title: 'Path',
-    desc: 'Enumerate all PC solutions. Ex: *p4 generates solution table with fumens.',
+    desc: 'Enumerate all PC solutions.',
+    usage: 'Usage:\n  *p4       → solutions for any 4-draw\n  *p7       → coverage for full bag\n  I,T,S,Z   → specific piece order\n  --split   → one piece per fumen page\n  --hold avoid → no hold',
   },
   setup: {
     title: 'Setup',
@@ -152,7 +154,7 @@ const en = {
   },
   spin: {
     title: 'Spin',
-    desc: 'Find T-spin setups. Ex: *p7 yields [O] (works) / [X] (T unreachable) solutions.',
+    desc: 'Find T-spin operations from the specified field.',
     optionsLabel: 'Options',
     fillBottom: 'Fill Bottom',
     fillBottomHint: 'lowest y',
@@ -181,6 +183,7 @@ const en = {
     piece: 'Piece',
     noSpin: 'No T-spin solutions found.',
     solutionCount: 'T-spin solutions',
+    usage: 'Usage:\n  *p7       → T-spin with defaults\n  *p4       → T-spin with 4 pieces\n  line: 2   → TSD (default)\n  line: 3   → TST\n  roof: no  → skip roof search\n  filter: ignore-t → include [X] solutions',
   },
   cover: {
     title: 'Cover',
@@ -335,17 +338,19 @@ const zh: typeof en = {
   },
   percent: {
     title: 'Percent',
-    desc: '计算 PC 成功率。示例: *p4 显示每块入手概率。',
+    desc: '计算 PC 成功率。',
     nearGuaranteed: '接近确定',
     highlyConsistent: '高度一致',
     reliable: '可靠的',
     inconsistent: '不稳定',
     unreliable: '不可靠',
     sequences: '个序列成功',
+    usage: '用法:\n  *p4       → 任意 4 块的概率\n  *p7       → 整袋 (5040)\n  I,*p4     → 保留 I, 再抽 4\n  T,O,I     → 指定顺序\n  --hold avoid → 不使用暂存',
   },
   path: {
     title: 'Path',
-    desc: '枚举所有 PC 解法。示例: *p4 生成解法表格和 fumen。',
+    desc: '枚举所有 PC 解法。',
+    usage: '用法:\n  *p4       → 任意 4 块的解法\n  *p7       → 整袋覆盖\n  I,T,S,Z   → 指定顺序\n  --split   → 每页一个块\n  --hold avoid → 不使用暂存',
   },
   setup: {
     title: 'Setup',
@@ -357,11 +362,11 @@ const zh: typeof en = {
   },
   spin: {
     title: 'Spin',
-    desc: '寻找 T-spin 操作。示例: *p7 输出 [O](可行) / [X](T不可达) 的解。',
+    desc: '从指定场地寻找 T-spin 操作。',
     optionsLabel: '选项',
     fillBottom: '填充底部',
     fillBottomHint: '最低 y',
-    fillBottomTooltip: '消行区域最低 y。该行以下的块保持不变。\n0 = 第一行（地面）。',
+    fillBottomTooltip: '消行区域最低 y。该行以下块保持不变。\n0 = 第一行（地面）。',
     fillTop: '填充顶部',
     fillTopHint: '−1 = 自动',
     fillTopTooltip: '消行区域最高 y。\n−1 = 自动（最高方块 + 1）。',
@@ -386,6 +391,7 @@ const zh: typeof en = {
     piece: '块',
     noSpin: '未找到 T-spin 解。',
     solutionCount: 'T-spin 解',
+    usage: '用法:\n  *p7       → 默认 T-spin 搜索\n  *p4       → 使用 4 块搜索\n  line: 2   → TSD (默认)\n  line: 3   → TST\n  roof: no  → 跳过屋顶搜索\n  filter: ignore-t → 包含 [X] 解',
   },
   cover: {
     title: 'Cover',
