@@ -3,6 +3,7 @@ import type { SfinderOutput } from '@/types/sfinder';
 import { invoke } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { decoder, encoder } from 'tetris-fumen';
+import { useFumenStore } from '@/stores/fumenStore';
 import RawOutput from './RawOutput';
 import PercentDisplay from './PercentDisplay';
 import { Search } from 'lucide-react';
@@ -497,18 +498,34 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   );
 
   const FumenThumbnail = ({ fumen }: { fumen: string }) => {
+    const editorFumen = useFumenStore.getState().fumenString;
     const pages = useMemo(() => {
       try { return decoder.decode(fumen); } catch { return null; }
     }, [fumen]);
-    if (!pages || pages.length === 0) return null;
+    // Merge editor field (initial X blocks) + solution pages
     const merged: string[][] = [];
     for (let y = 0; y < 23; y++) merged[y] = Array(10).fill('_');
-    for (const p of pages) {
-      for (let y = 0; y < 23; y++) {
-        for (let x = 0; x < 10; x++) {
-          const cell = p.field.at(x, y);
-          if (cell !== '_') merged[y][x] = cell;
+    // Editor field first (background)
+    if (editorFumen) {
+      try {
+        const ep = decoder.decode(editorFumen);
+        if (ep?.[0]) {
+          for (let y = 0; y < 23; y++)
+            for (let x = 0; x < 10; x++) {
+              const cell = ep[0].field.at(x, y);
+              if (cell !== '_') merged[y][x] = cell;
+            }
         }
+      } catch {}
+    }
+    // Solution pages on top
+    if (pages) {
+      for (const p of pages) {
+        for (let y = 0; y < 23; y++)
+          for (let x = 0; x < 10; x++) {
+            const cell = p.field.at(x, y);
+            if (cell !== '_') merged[y][x] = cell;
+          }
       }
     }
     let ctop = 22, cbtm = 0;
@@ -519,9 +536,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     const rows: React.ReactNode[] = [];
     for (let y = cbtm; y >= ctop; y--) {
       const cells: React.ReactNode[] = [];
-      for (let x = 0; x < 10; x++) {
-        cells.push(<Cell key={x} cell={merged[y][x]} />);
-      }
+      for (let x = 0; x < 10; x++) cells.push(<Cell key={x} cell={merged[y][x]} />);
       rows.push(<div key={y} className="flex gap-px">{cells}</div>);
     }
     return (
