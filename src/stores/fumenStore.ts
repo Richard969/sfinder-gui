@@ -134,7 +134,7 @@ export const useFumenStore = create<FumenStore>((set, get) => ({
   pages: [createEmptyFieldPage()],
   currentPageIndex: 0,
   selectedTool: { type: 'paint', pieceType: 'X' as CellType, rotation: 'spawn' as RotationType },
-  fumenString: '',
+  fumenString: encoder.encode(pagesToEncode([createEmptyFieldPage()])),
   patterns: '',
   clearLine: 4,
   clearedAt: 0,
@@ -159,9 +159,8 @@ export const useFumenStore = create<FumenStore>((set, get) => ({
   newFile: () => set({
     pages: [createEmptyFieldPage()],
     currentPageIndex: 0,
-    fumenString: '',
+    fumenString: encoder.encode(pagesToEncode([createEmptyFieldPage()])),
     clearedAt: Date.now(),
-    patterns: '',
     undoStack: [],
     redoStack: [],
   }),
@@ -209,9 +208,8 @@ export const useFumenStore = create<FumenStore>((set, get) => ({
     pushSnapshot(state);
     const newPages = clonePages(state.pages);
     newPages[state.currentPageIndex] = createEmptyFieldPage();
-    return { pages: newPages, fumenString: '', clearedAt: Date.now() };
+    return { pages: newPages, fumenString: encoder.encode(pagesToEncode([createEmptyFieldPage()])), clearedAt: Date.now() };
   }),
-
   setTool: (tool) => set({ selectedTool: tool }),
 
   setComment: (comment) => set((state) => {

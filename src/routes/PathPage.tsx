@@ -41,7 +41,11 @@ export default function PathPage() {
         kicksPath={std.kicks} onKicksPathChange={(v) => update('standard', { kicks: v })}
         {...(showRare ? { split: std.split, onSplitChange: (v: boolean) => update('standard', { split: v }) } : {})} />
       <CommandRunner status={status}
-        onExecute={() => execute({ command: 'path', tetfu: [editorFumen], patterns, hold: std.hold, drop: std.drop, kicks: std.kicks, format: 'csv', key: 'pattern', page, clearLine, split: std.split })}
+        onExecute={() => execute({
+          command: 'path',
+          tetfu: editorFumen ? [editorFumen] : [],
+          patterns, hold: std.hold, drop: std.drop, kicks: std.kicks, format: 'csv', key: 'pattern', page, clearLine, split: std.split,
+        })}
         onCancel={() => {}} disabled={!ready || !patterns} />
       {status.type === 'success' && <OutputViewer output={status.output} command="path" />}
     </div>

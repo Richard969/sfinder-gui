@@ -43,8 +43,13 @@ export default function PercentPage() {
         kicksPath={std.kicks} onKicksPathChange={(v) => update('standard', { kicks: v })}
       />
       <CommandRunner status={status}
-        onExecute={() => execute({ command: 'percent', tetfu: [editorFumen], patterns, hold: std.hold, drop: std.drop, kicks: std.kicks, page, clearLine })}
+        onExecute={() => execute({
+          command: 'percent',
+          tetfu: editorFumen ? [editorFumen] : [],
+          patterns, hold: std.hold, drop: std.drop, kicks: std.kicks, page, clearLine,
+        })}
         onCancel={() => {}} disabled={!ready || !patterns} />
+      {status.type === 'success' && <OutputViewer output={status.output} command="percent" />}
     </div>
   );
 }
