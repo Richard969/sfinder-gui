@@ -51,7 +51,10 @@ export default function Header() {
           {showUsage && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowUsage(false)}>
               <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <pre className="text-sm text-card-foreground leading-relaxed whitespace-pre-wrap font-sans">{usage}</pre>
+                <h2 className="text-base font-semibold mb-3 text-foreground">{title}</h2>
+                <div className="rounded-lg border border-border bg-background p-3">
+                  <pre className="text-sm text-foreground leading-relaxed whitespace-pre-wrap font-sans">{usage}</pre>
+                </div>
                 <button onClick={() => setShowUsage(false)}
                   className="mt-4 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
                   Close
