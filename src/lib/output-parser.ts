@@ -134,19 +134,13 @@ export interface SpinEntry {
   piece: number;
 }
 
-export function parseSpin(html: string): { entries: SpinEntry[]; allFumen?: string } {
+export function parseSpin(html: string): SpinEntry[] {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const results: SpinEntry[] = [];
   const links = doc.querySelectorAll('a[href^="v115@"]');
-  let allFumen: string | undefined;
   let idx = 0;
   for (const link of links) {
-    const href = link.getAttribute('href') ?? '';
-    // extract all-solutions fumen (multi-page link with #1:)
-    if (href.includes('#')) {
-      const pageRange = href.split('#')[1];
-      if (pageRange?.startsWith('1:')) allFumen = href;
-    }
+    const fumen = link.getAttribute('href') ?? '';
     const parent = link.closest('li') ?? link.parentElement;
     const line = (parent?.textContent ?? link.textContent ?? '').trim();
     const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
@@ -154,11 +148,10 @@ export function parseSpin(html: string): { entries: SpinEntry[]; allFumen?: stri
     const markMatch = line.match(/^\[([OX\-])\]/);
     const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
     const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').replace(/<[^>]*>/g, '').trim();
-    results.push({ index: idx++, operations: ops, mark, fumen: href,
+    results.push({ index: idx++, operations: ops, mark, fumen,
       clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
   }
-  if (results.length > 0) return { entries: results, allFumen };
-  // fallback: plain-text lines
+  if (results.length > 0) return results;
   for (const line of html.split('\n')) {
     const statsMatch = line.match(/clear=(\d+),\s*hole=(\d+),\s*piece=(\d+)/);
     if (!statsMatch) continue;
@@ -168,5 +161,5 @@ export function parseSpin(html: string): { entries: SpinEntry[]; allFumen?: stri
     results.push({ index: idx++, operations: ops, mark, fumen: '',
       clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
   }
-  return { entries: results };
+  return results;
 }

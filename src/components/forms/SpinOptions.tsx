@@ -93,17 +93,17 @@ export default function SpinOptions(props: SpinOptionsProps) {
             <button onClick={() => onLineChange(1)}
               className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
                 ${line === 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
-              TSS
+              ≥ TSS
             </button>
             <button onClick={() => onLineChange(2)}
               className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
                 ${line === 2 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
-              TSD
+              ≥ TSD
             </button>
             <button onClick={() => onLineChange(3)}
               className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
                 ${line === 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
-              TST
+              ≥ TST
             </button>
           </div>
         </div>

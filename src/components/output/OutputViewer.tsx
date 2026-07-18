@@ -410,9 +410,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     return (output.strictMinimal || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.strictMinimal]);
   const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
-  const spinData = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
-  const spinRows = spinData.entries;
-  const spinAllFumen = spinData.allFumen;
+  const spinRows = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
 
   const handleView = (fumen: string) => {
     try {
@@ -631,24 +629,24 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         {!failed && activeTab === 'summary' && command === 'cover' && (
           <CoverSummary output={output} t={t} coverLogic={coverLogic} />
         )}
+        {!failed && activeTab === 'summary' && command === 'spin' && spinRows.length === 0 && (
+          <p className="text-sm text-muted-foreground">{t('spin.noSpin')}</p>
+        )}
         {!failed && activeTab === 'summary' && command === 'spin' && spinRows.length > 0 && (
-          <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-            <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
-            <div className="text-2xl font-bold text-foreground">{spinRows.length}</div>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
+              <div className="text-3xl font-bold text-foreground">{spinRows.length}</div>
+            </div>
             <button onClick={() => {
-              const fumen = spinAllFumen;
-              if (!fumen) {
-                const allFumens = spinRows.map((r) => r.fumen).filter(Boolean) as string[];
-                const combined = combineFumens(allFumens.map((f) => ({ fumen: f, coverage: 0 })), allFumens.length);
-                if (combined) handleView(combined);
-              } else handleView(fumen);
-            }} className="w-full rounded-md bg-primary/15 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
+              const fumens = spinRows.map((r) => r.fumen).filter(Boolean) as string[];
+              if (fumens.length === 0) return;
+              const combined = combineFumens(fumens.map((f) => ({ fumen: f, coverage: 0 })), fumens.length);
+              if (combined) handleView(combined);
+            }} className="w-full rounded-md bg-primary/15 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
               {t('output.viewAll')}
             </button>
           </div>
-        )}
-        {!failed && activeTab === 'solutions' && command === 'spin' && (
-          <SpinGrid rows={spinRows} />
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && command !== 'spin' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
