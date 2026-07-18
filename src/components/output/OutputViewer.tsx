@@ -414,8 +414,8 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
 
   const handleView = (fumen: string) => {
     try {
-      const base = window.location.origin;
-      const url = `${base}/view-fumen?fumen=${encodeURIComponent(fumen)}`;
+      const encoded = encodeURIComponent(fumen);
+      const url = `/view-fumen#${encoded}`;
       const win = new WebviewWindow(`fumen-${Date.now()}`, {
         url,
         title: 'Fumen Viewer',
