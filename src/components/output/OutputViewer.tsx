@@ -627,6 +627,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
               <div className="text-3xl font-bold text-foreground">{spinRows.length}</div>
             </div>
+            {spinRows.length > 50 && (
             <div className="grid grid-cols-3 gap-2">
               {Object.entries(spinCats).map(([cat, count], i) => {
                 if (count === 0) return null;
@@ -640,6 +641,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
                 );
               })}
             </div>
+            )}
             <div className="flex justify-center">
               <button onClick={() => {
                 const fumens = spinRows.map((r) => r.fumen).filter(Boolean) as string[];
