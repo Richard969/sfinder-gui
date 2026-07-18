@@ -638,6 +638,22 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
               <div className="text-3xl font-bold text-foreground">{spinRows.length}</div>
             </div>
+            {([
+              ['single-[regular]', 'Single [Regular]'],
+              ['single-[mini]', 'Single [Mini]'],
+              ['double-[regular]', 'Double [Regular]'],
+              ['double-[mini]', 'Double [Mini]'],
+              ['triple-[regular]', 'Triple [Regular]'],
+            ] as const).map(([cat, label]) => {
+              const count = spinRows.filter((r) => r.category === cat).length;
+              if (count === 0) return null;
+              return (
+                <div key={cat} className="rounded-lg border border-border bg-card p-3 flex items-center justify-between">
+                  <span className="text-sm font-medium">{label}</span>
+                  <span className="text-lg font-bold">{count}</span>
+                </div>
+              );
+            })}
             <button onClick={() => {
               const fumens = spinRows.map((r) => r.fumen).filter(Boolean) as string[];
               if (fumens.length === 0) return;
