@@ -163,3 +163,21 @@ export function parseSpin(html: string): SpinEntry[] {
   }
   return results;
 }
+
+/** Count spin solutions per category from HTML sections */
+export function getSpinCategoryCounts(html: string): Record<string, number> {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const counts: Record<string, number> = {};
+  const sections = doc.querySelectorAll('section');
+  for (const section of sections) {
+    const cat = section.id || '';
+    if (!cat) continue;
+    const divs = section.querySelectorAll('div');
+    let count = 0;
+    for (const div of divs) {
+      if (div.textContent?.match(/\[OX\-\]/)) count++;
+    }
+    if (count > 0) counts[cat] = count;
+  }
+  return counts;
+}

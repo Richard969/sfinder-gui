@@ -7,7 +7,7 @@ import RawOutput from './RawOutput';
 import PercentDisplay from './PercentDisplay';
 import { Search } from 'lucide-react';
 import { useT } from '@/i18n/useTranslation';
-import { parseCoverage, parseSpin } from '@/lib/output-parser';
+import { parseCoverage, parseSpin, getSpinCategoryCounts } from '@/lib/output-parser';
 import type { SpinEntry } from '@/lib/output-parser';
 
 interface OutputViewerProps {
@@ -411,6 +411,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   }, [output.strictMinimal]);
   const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
   const spinRows = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
+  const spinCats = useMemo(() => getSpinCategoryCounts(htmlOutput), [htmlOutput]);
 
   const handleView = (fumen: string) => {
     try {
@@ -483,14 +484,57 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
       </div>
     );
   };
-  const SpinTable = ({ rows }: { rows: SpinEntry[] }) => {
+  const PIECE_COLORS: Record<string, string> = {
+    I: 'var(--piece-i)', O: 'var(--piece-o)', T: 'var(--piece-t)',
+    L: 'var(--piece-l)', J: 'var(--piece-j)', S: 'var(--piece-s)', Z: 'var(--piece-z)',
+    X: 'var(--muted-foreground)',
+  };
+
+  const Cell = ({ cell }: { cell: string }) => (
+    <div className="w-2.5 h-2.5 rounded-[1px]"
+      style={cell !== '_' ? { backgroundColor: PIECE_COLORS[cell] || 'var(--muted-foreground)' } : undefined}
+    />
+  );
+
+  const FumenThumbnail = ({ fumen, mark, clears, holes, pieces }: {
+    fumen: string; mark: string; clears: number; holes: number; pieces: number;
+  }) => {
+    const pages = useMemo(() => {
+      try { return decoder.decode(fumen); } catch { return null; }
+    }, [fumen]);
+    const field = pages?.[0]?.field;
+    if (!field) return null;
+    let top = 22;
+    for (let y = 22; y >= 0; y--) {
+      let empty = true;
+      for (let x = 0; x < 10; x++) { if (field.at(x, y) !== '_') { empty = false; break; } }
+      if (empty) top = y - 1; else break;
+    }
+    const bottom = Math.max(0, top - 7);
+    const rows: React.ReactNode[] = [];
+    for (let y = top; y >= bottom; y--) {
+      const cells: React.ReactNode[] = [];
+      for (let x = 0; x < 10; x++) { cells.push(<Cell key={x} cell={field.at(x, y)} />); }
+      rows.push(<div key={y} className="flex gap-px">{cells}</div>);
+    }
+    const mCls = mark === 'O' ? 'text-green-400' : mark === 'X' ? 'text-red-400' : 'text-muted-foreground';
+    const mLabel = mark === 'O' ? '✓' : mark === 'X' ? '✗' : '-';
+    return (
+      <div className="flex flex-col items-center gap-1 p-2 rounded-lg border border-border bg-card hover:bg-accent cursor-pointer transition-colors"
+        onClick={() => handleView(fumen)}>
+        <div className="flex flex-col gap-px bg-muted/30 p-1 rounded">{rows}</div>
+        <div className={`text-xs font-bold ${mCls}`}>{mLabel}</div>
+        <div className="text-[9px] text-muted-foreground">C{clears} H{holes} P{pieces}</div>
+      </div>
+    );
+  };
+
+  const SpinGrid = ({ rows }: { rows: SpinEntry[] }) => {
     const filtered = useMemo(() => {
       const q = search.trim().toLowerCase();
-      return q ? rows.filter((s) => s.operations.toLowerCase().includes(q)) : rows;
+      return q ? rows.filter((s) => (s.mark + ' ' + s.operations).toLowerCase().includes(q)) : rows;
     }, [rows, search]);
     if (rows.length === 0) return <p className="text-sm text-muted-foreground">{t('spin.noSpin')}</p>;
-    const markIcon = (m: string) => m === 'O' ? '✓' : m === 'X' ? '✗' : '-';
-    const markColor = (m: string) => m === 'O' ? 'text-green-400' : m === 'X' ? 'text-red-400' : 'text-muted-foreground';
     return (
       <div className="space-y-2">
         <div className="relative">
@@ -499,38 +543,17 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
             className="w-full rounded border border-input bg-background pl-7 pr-2 py-1 text-xs
               placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring" />
         </div>
-        <div className="rounded-md border border-border overflow-hidden max-h-[400px] overflow-y-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-secondary/50 sticky top-0">
-              <tr>
-                <th className="px-2 py-1.5 text-left font-medium text-muted-foreground w-8">#</th>
-                <th className="px-2 py-1.5 text-left font-medium text-muted-foreground w-10">Mark</th>
-                <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">{t('output.operations')}</th>
-                <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-12">{t('spin.clear')}</th>
-                <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-12">{t('spin.hole')}</th>
-                <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-12">{t('spin.piece')}</th>
-                <th className="px-2 py-1.5 text-center font-medium text-muted-foreground w-16">{t('output.view')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.map((s, i) => (
-                <tr key={i} className="hover:bg-secondary/30">
-                  <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
-                  <td className={`px-2 py-1 font-mono font-bold ${markColor(s.mark)}`}>{markIcon(s.mark)}</td>
-                  <td className="px-2 py-1 font-mono">{s.operations}</td>
-                  <td className="px-2 py-1 text-center">{s.clear}</td>
-                  <td className="px-2 py-1 text-center">{s.hole}</td>
-                  <td className="px-2 py-1 text-center">{s.piece}</td>
-                  <td className="px-2 py-1 text-center">
-                    {s.fumen && (<button onClick={() => handleView(s.fumen!)}
-                      className="text-[10px] px-2 py-0.5 rounded bg-primary/15 text-primary hover:bg-primary/25 font-medium">
-                      {t('output.view')}
-                    </button>)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 max-h-[500px] overflow-y-auto p-1">
+          {filtered.map((s, i) => (
+            s.fumen ? <FumenThumbnail key={i} fumen={s.fumen} mark={s.mark} clears={s.clear} holes={s.hole} pieces={s.piece} /> :
+            <div key={i} className="flex flex-col items-center gap-1 p-2 rounded-lg border border-border bg-card">
+              <span className={`text-lg font-bold ${s.mark === 'O' ? 'text-green-400' : s.mark === 'X' ? 'text-red-400' : 'text-muted-foreground'}`}>
+                {s.mark === 'O' ? '✓' : s.mark === 'X' ? '✗' : '-'}
+              </span>
+              <span className="text-xs font-mono truncate max-w-full">{s.operations}</span>
+              <span className="text-[9px] text-muted-foreground">C{s.clear} H{s.hole} P{s.piece}</span>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -599,16 +622,43 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
           <CoverSummary output={output} t={t} coverLogic={coverLogic} />
         )}
         {!failed && activeTab === 'summary' && command === 'spin' && spinRows.length > 0 && (
-          <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-            <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
-            <div className="text-2xl font-bold text-foreground">{spinRows.length}</div>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
+              <div className="text-3xl font-bold text-foreground">{spinRows.length}</div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {( [
+                ['single-[regular]', 'Single [Regular]', 'border-green-500/40 bg-green-500/5'],
+                ['single-[mini]',    'Single [Mini]',    'border-emerald-500/40 bg-emerald-500/5'],
+                ['double-[regular]', 'Double [Regular]', 'border-blue-500/40 bg-blue-500/5'],
+                ['double-[mini]',    'Double [Mini]',    'border-cyan-500/40 bg-cyan-500/5'],
+                ['triple-[regular]', 'Triple [Regular]', 'border-purple-500/40 bg-purple-500/5'],
+              ] as const).map(([cat, label, color]) => {
+                const count = spinCats[cat] || 0;
+                if (count === 0) return null;
+                return (
+                  <div key={cat} className={`rounded-lg border p-3 flex flex-col items-center gap-0.5 ${color}`}>
+                    <span className="text-[10px] font-medium opacity-70">{label}</span>
+                    <span className="text-lg font-bold">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-center">
+              <button onClick={() => {
+                const fumens = spinRows.map((r) => r.fumen).filter(Boolean) as string[];
+                if (fumens.length === 0) return;
+                const combined = combineFumens(fumens.map((f) => ({ fumen: f, coverage: 0 })), fumens.length);
+                if (combined) handleView(combined);
+              }} className="rounded-md bg-primary/15 px-5 py-2 text-sm font-medium text-primary hover:bg-primary/25 transition-colors">
+                {t('output.viewAll')}
+              </button>
+            </div>
           </div>
         )}
-        {!failed && activeTab === 'summary' && command === 'spin' && spinRows.length === 0 && (
-          <div className="text-sm text-muted-foreground">{t('spin.noSpin')}</div>
-        )}
         {!failed && activeTab === 'solutions' && command === 'spin' && (
-          <SpinTable rows={spinRows} />
+          <SpinGrid rows={spinRows} />
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
