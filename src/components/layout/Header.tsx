@@ -31,6 +31,7 @@ export default function Header() {
     '/percent': t('percent.usage'),
     '/path': t('path.usage'),
     '/spin': t('spin.usage'),
+    '/cover': t('cover.usage'),
   };
 
   const title = routeTitles[location.pathname] ?? 'sfinder-gui';

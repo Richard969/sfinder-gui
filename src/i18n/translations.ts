@@ -183,7 +183,7 @@ const en = {
     piece: 'Piece',
     noSpin: 'No T-spin solutions found.',
     solutionCount: 'T-spin solutions',
-    usage: 'Find a single T-spin placement\n\nSteps:\n1. Draw a field with enough rows for T-spins.\n2. Input a piece pattern (e.g. *p7).\n3. Set line (2=TSD, 3=TST), roof, and filter options.\n4. Click EXECUTE and browse [O]/[X]/[-] results.',
+    usage: 'Find a single T-spin placement\n\nSteps:\n1. Draw a field and adjust rows as needed.\n2. Enter a piece pattern (e.g. *p7).\n3. Choose TSS / TSD / TST and toggle roof search.\n4. Click EXECUTE and browse the [O]/[X]/[-] results.',
   },
   cover: {
     title: 'Cover',
@@ -200,6 +200,7 @@ const en = {
     orCoverage: 'OR Coverage',
     andCoverage: 'AND Coverage',
     trimWarning: 'Field exceeds display height — content above will be trimmed.',
+    usage: 'Calculate coverage of piece sequences\n\nSteps:\n1. Draw one piece placement per fumen page.\n2. Add a piece pattern (e.g. *p7).\n3. Choose mode (Normal / T-Spin) and combine logic (OR / AND).\n4. Click EXECUTE and review the coverage results.',
   },
   view: {
     allSolutions: 'All Solutions',
@@ -391,7 +392,7 @@ const zh: typeof en = {
     piece: '块',
     noSpin: '未找到 T-spin 解。',
     solutionCount: 'T-spin 解',
-    usage: '寻找一次 T-spin 放置\n\n步骤:\n1. 绘制场地（至少 4 行方块用于 T-spin）。\n2. 输入块序列 (例如 *p7)。\n3. 设置 line (2=TSD, 3=TST)、roof 和 filter 选项。\n4. 点击 EXECUTE 浏览 [O]/[X]/[-] 结果。',
+    usage: '寻找一次 T-spin 放置\n\n步骤:\n1. 绘制场地并按需调整行数。\n2. 输入块序列 (例如 *p7)。\n3. 选择 TSS / TSD / TST 并切换屋顶搜索。\n4. 点击 EXECUTE 浏览 [O]/[X]/[-] 结果。',
   },
   cover: {
     title: 'Cover',
@@ -408,6 +409,7 @@ const zh: typeof en = {
     orCoverage: 'OR 覆盖率',
     andCoverage: 'AND 覆盖率',
     trimWarning: '场地高度超出显示范围，超出部分将被裁切。',
+    usage: '计算序列覆盖率\n\n步骤:\n1. 每页 fumen 绘制一个方块的放置。\n2. 输入块序列 (例如 *p7)。\n3. 选择模式 (普通 / T-Spin) 和组合逻辑 (OR / AND)。\n4. 点击 EXECUTE 查看覆盖率结果。',
   },
   view: {
     allSolutions: '全部解法',
