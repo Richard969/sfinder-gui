@@ -57,7 +57,13 @@ export default function CoverPage() {
 
   const t = useT();
   const ready = javaInfo.installed && jarInfo.found;
-  const hasFieldContent = pages.some(p => p.operation !== undefined);
+  const hasFieldContent = pages.some(p => {
+    if (p.operation) return true;
+    for (let y = 0; y < 23; y++)
+      for (let x = 0; x < 10; x++)
+        if (PIECE_TYPES.includes(p.field.at(x, y) as any)) return true;
+    return false;
+  });
   /// Build one tetfu per page.
   /// Each tetfu = one placement pattern (may be multi-page if auto-split).
   async function buildTetfus(): Promise<string[]> {
