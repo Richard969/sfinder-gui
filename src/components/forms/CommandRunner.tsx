@@ -51,9 +51,6 @@ export default function CommandRunner({
       {status.type === 'error' && (
         <div className="text-xs text-red-400">{status.message}</div>
       )}
-      {status.type === 'cancelled' && (
-        <div className="text-xs text-yellow-400">{t('runner.cancelled')}</div>
-      )}
     </div>
   );
 }

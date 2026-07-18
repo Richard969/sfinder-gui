@@ -20,14 +20,13 @@ export default function PercentPage() {
   const isRunning = status.type === 'running';
   const { execute, cancel } = useSfinderCommand();
   useEffect(() => { clearStatus(); }, []);
-  useEffect(() => () => { if (isRunning) cancel(); }, [isRunning, cancel]);
+  useEffect(() => () => { if (useCommandStore.getState().status.type === 'running') cancel(); }, [cancel]);
   const editorFumen = useEditorFumen();
   const patterns = useFumenStore((s) => s.patterns);
   const setPatterns = useFumenStore((s) => s.setPatterns);
   const currentPageIndex = useFumenStore((s) => s.currentPageIndex);
   const std = usePageStore((s) => s.standard);
   const update = usePageStore((s) => s.update);
-  const clearedAt = useFumenStore((s) => s.clearedAt);
   const page = currentPageIndex + 1;
   const clearLine = useFumenStore((s) => s.clearLine);
   const setClearLine = useFumenStore((s) => s.setClearLine);
