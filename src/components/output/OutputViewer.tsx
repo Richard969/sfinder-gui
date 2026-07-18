@@ -548,14 +548,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         </div>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 max-h-[500px] overflow-y-auto p-1">
           {filtered.map((s, i) => (
-            s.fumen ? <FumenThumbnail key={i} fumen={s.fumen} /> :
-            <div key={i} className="flex flex-col items-center gap-1 p-2 rounded-lg border border-border bg-card">
-              <span className={`text-lg font-bold ${s.mark === 'O' ? 'text-green-400' : s.mark === 'X' ? 'text-red-400' : 'text-muted-foreground'}`}>
-                {s.mark === 'O' ? '✓' : s.mark === 'X' ? '✗' : '-'}
-              </span>
-              <span className="text-xs font-mono truncate max-w-full">{s.operations}</span>
-              <span className="text-[9px] text-muted-foreground">C{s.clear} H{s.hole} P{s.piece}</span>
-            </div>
+            s.fumen && <FumenThumbnail key={i} fumen={s.fumen} />
           ))}
         </div>
       </div>
