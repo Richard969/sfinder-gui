@@ -388,6 +388,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   const [fileContents, setFileContents] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [spinFilter, setSpinFilter] = useState('all');
+  const [spinPage, setSpinPage] = useState(0);
 
   useEffect(() => {
     async function read() {
@@ -408,12 +409,11 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   const pathRows = useMemo(() => {
     return (output.pathResults || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.pathResults]);
-  const strictMinimalRows = useMemo(() => {
-    return (output.strictMinimal || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
-  }, [output.strictMinimal]);
   const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
   const spinRows = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
   const spinCats = useMemo(() => { try { return getSpinCategoryCounts(htmlOutput); } catch { return {}; } }, [htmlOutput]);
+  useEffect(() => { setSpinFilter('all'); setSpinPage(0); }, [htmlOutput]);
+  useEffect(() => { setSpinPage(0); }, [spinFilter]);
 
   const handleView = (fumen: string) => {
     try {
@@ -550,6 +550,10 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
       return q ? rows.filter((s) => (s.mark + ' ' + s.operations).toLowerCase().includes(q)) : rows;
     }, [rows, search]);
     if (rows.length === 0) return <p className="text-sm text-muted-foreground">{t('spin.noSpin')}</p>;
+    const perPage = 20;
+    const totalPages = Math.ceil(filtered.length / perPage);
+    const page = Math.min(spinPage, totalPages - 1);
+    const paged = filtered.slice(page * perPage, (page + 1) * perPage);
     return (
       <div className="space-y-2">
         <div className="relative">
@@ -559,10 +563,19 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
               placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring" />
         </div>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 max-h-[500px] overflow-y-auto p-1">
-          {filtered.map((s, i) => (
+          {paged.map((s, i) => (
             s.fumen && <FumenThumbnail key={i} fumen={s.fumen} />
           ))}
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 text-xs">
+            <button onClick={() => setSpinPage(Math.max(0, page - 1))} disabled={page === 0}
+              className="px-2 py-1 rounded bg-secondary text-muted-foreground hover:bg-secondary/80 disabled:opacity-30">Prev</button>
+            <span className="text-muted-foreground">{page + 1} / {totalPages}</span>
+            <button onClick={() => setSpinPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
+              className="px-2 py-1 rounded bg-secondary text-muted-foreground hover:bg-secondary/80 disabled:opacity-30">Next</button>
+          </div>
+        )}
       </div>
     );
   };
