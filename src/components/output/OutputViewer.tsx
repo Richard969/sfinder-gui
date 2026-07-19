@@ -387,6 +387,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   const [activeTab, setActiveTab] = useState<TabId>(output.exitCode !== 0 ? 'stderr' : 'summary');
   const [fileContents, setFileContents] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
+  const [spinFilter, setSpinFilter] = useState('all');
 
   useEffect(() => {
     async function read() {
@@ -585,16 +586,6 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
     if (spinRows.length > 0) tabs.push({ id: 'solutions', label: `${t('spin.solutionCount')} (${spinRows.length})` });
     tabs.push({ id: 'stdout', label: t('output.stdout') });
     if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
-  } else if (command === 'cover') {
-    tabs.push({ id: 'summary', label: t('output.summary') });
-    tabs.push({ id: 'stdout', label: t('output.stdout') });
-    if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
-  } else {
-    tabs.push({ id: 'summary', label: t('output.summary') });
-    if (unique.length + minimal.length > 0) tabs.push({ id: 'solutions', label: `${t('output.allSolutions')} (${unique.length + minimal.length})` });
-    tabs.push({ id: 'stdout', label: t('output.stdout') });
-    if (htmlOutput) tabs.push({ id: 'csv', label: t('output.rawHtml') });
-    if (output.stderr) tabs.push({ id: 'stderr', label: t('output.stderr') });
   }
 
   return (
@@ -672,7 +663,21 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
           </div>
         )}
         {!failed && activeTab === 'solutions' && command === 'spin' && (
-          <SpinGrid rows={spinRows} />
+          <div className="space-y-2">
+            <div className="flex gap-1 flex-wrap">
+              <button onClick={() => setSpinFilter('all')}
+                className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${spinFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                All ({spinRows.length})
+              </button>
+              {Object.entries(spinCats).map(([cat, count]) => (
+                <button key={cat} onClick={() => setSpinFilter(cat)}
+                  className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${spinFilter === cat ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                  {cat.replace(/-\w+(?=\[)/, '').replace(/\[(\w+)\]/, (_,w:string)=>`[${w.toUpperCase()}]`).replace(/\b\w/g,(c:string)=>c.toUpperCase())} ({count})
+                </button>
+              ))}
+            </div>
+            <SpinGrid rows={spinFilter === 'all' ? spinRows : spinRows.filter((r) => r.category === spinFilter)} />
+          </div>
         )}
         {!failed && activeTab === 'summary' && command !== 'percent' && command !== 'path' && command !== 'cover' && command !== 'spin' && (
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />

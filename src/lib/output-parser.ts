@@ -132,6 +132,7 @@ export interface SpinEntry {
   clear: number;
   hole: number;
   piece: number;
+  category: string;
 }
 
 export function parseSpin(html: string): SpinEntry[] {
@@ -140,6 +141,8 @@ export function parseSpin(html: string): SpinEntry[] {
   const links = doc.querySelectorAll('a[href*="v115@"]');
   let idx = 0;
   for (const link of links) {
+    const section = link.closest('section');
+    const category = section?.id || '';
     const fumen = (link.getAttribute('href') ?? '').replace(/^https?:\/\/fumen\.zui\.jp\/\?/, '');
     const parent = link.closest('li') ?? link.parentElement;
     const line = (parent?.textContent ?? link.textContent ?? '').trim();
@@ -149,7 +152,7 @@ export function parseSpin(html: string): SpinEntry[] {
     const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
     const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').replace(/<[^>]*>/g, '').trim();
     results.push({ index: idx++, operations: ops, mark, fumen,
-      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
+      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]), category });
   }
   if (results.length > 0) return results;
   for (const line of html.split('\n')) {
@@ -159,7 +162,7 @@ export function parseSpin(html: string): SpinEntry[] {
     const mark = (markMatch ? markMatch[1] : '-') as 'O' | 'X' | '-';
     const ops = line.replace(/^\[[OX\-]\]\s*/, '').replace(/\[clear=.*?\]\s*/, '').trim();
     results.push({ index: idx++, operations: ops, mark, fumen: '',
-      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]) });
+      clear: parseInt(statsMatch[1]), hole: parseInt(statsMatch[2]), piece: parseInt(statsMatch[3]), category: '' });
   }
   return results;
 }
