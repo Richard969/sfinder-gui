@@ -488,7 +488,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   const PIECE_COLORS: Record<string, string> = {
     I: 'var(--piece-i)', O: 'var(--piece-o)', T: 'var(--piece-t)',
     L: 'var(--piece-l)', J: 'var(--piece-j)', S: 'var(--piece-s)', Z: 'var(--piece-z)',
-    X: 'var(--muted-foreground)',
+    X: '#666',
   };
 
   const Cell = ({ cell }: { cell: string }) => (
@@ -499,6 +499,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
 
   const FumenThumbnail = ({ fumen }: { fumen: string }) => {
     const editorFumen = useFumenStore.getState().fumenString;
+    let blocks = 0; try { const pag = decoder.decode(editorFumen); if (pag?.[0]) { for (let y=0;y<23;y++) for (let x=0;x<10;x++) if (pag[0].field.at(x,y)!=='_') blocks++; } } catch {} console.log('thumb editor blocks:', blocks);
     const pages = useMemo(() => {
       try { return decoder.decode(fumen); } catch { return null; }
     }, [fumen]);
