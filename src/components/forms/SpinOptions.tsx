@@ -69,43 +69,53 @@ export default function SpinOptions(props: SpinOptionsProps) {
     line, onLineChange, roof, onRoofChange, maxRoof, onMaxRoofChange, filter,
     onFilterChange } = props;
   return (
-    <div className="space-y-3">
-      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-        {t('spin.optionsLabel')}
+    <div className="space-y-4">
+      {/* Field options */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          {t('spin.fieldOptions')}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <NumInput label={t('spin.fillBottom')} value={fillBottom} onChange={onFillBottomChange}
+            min={0} hint={t('spin.fillBottomHint')} tooltip={t('spin.fillBottomTooltip')} />
+          <NumInput label={t('spin.fillTop')} value={fillTop} onChange={onFillTopChange}
+            min={-1} hint={t('spin.fillTopHint')} tooltip={t('spin.fillTopTooltip')} />
+          <NumInput label={t('spin.marginHeight')} value={marginHeight} onChange={onMarginHeightChange}
+            min={-1} hint={t('spin.marginHeightHint')} tooltip={t('spin.marginHeightTooltip')} />
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <NumInput label={t('spin.fillBottom')} value={fillBottom} onChange={onFillBottomChange}
-          min={0} hint={t('spin.fillBottomHint')} tooltip={t('spin.fillBottomTooltip')} />
-        <NumInput label={t('spin.fillTop')} value={fillTop} onChange={onFillTopChange}
-          min={-1} hint={t('spin.fillTopHint')} tooltip={t('spin.fillTopTooltip')} />
-        <NumInput label={t('spin.marginHeight')} value={marginHeight} onChange={onMarginHeightChange}
-          min={-1} hint={t('spin.marginHeightHint')} tooltip={t('spin.marginHeightTooltip')} />
+
+      {/* Spin detection */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          {t('spin.spinDetection')}
+        </div>
         <div className="space-y-1">
           <label className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             {t('spin.line')}
             <HelpTooltip text={t('spin.lineTooltip')} />
           </label>
-          <div className="flex gap-1">
-            <button onClick={() => onLineChange(1)}
-              className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
-                ${line === 1 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
-              ≥ TSS
-            </button>
-            <button onClick={() => onLineChange(2)}
-              className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
-                ${line === 2 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
-              ≥ TSD
-            </button>
-            <button onClick={() => onLineChange(3)}
-              className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
-                ${line === 3 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
-              ≥ TST
-            </button>
+          <div className="flex rounded-md border border-input overflow-hidden">
+            {[
+              { v: 1, label: 'TSS' },
+              { v: 2, label: 'TSD' },
+              { v: 3, label: 'TST' },
+            ].map(({ v, label }) => (
+              <button key={v} onClick={() => onLineChange(v)}
+                className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
+                  ${line === v ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
+
       {showRare && (
-        <div className="space-y-3">
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            {t('spin.advanced')}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <NumInput label={t('spin.maxRoof')} value={maxRoof} onChange={onMaxRoofChange}
               min={-1} hint={t('spin.maxRoofHint')} tooltip={t('spin.maxRoofTooltip')} />
@@ -114,14 +124,14 @@ export default function SpinOptions(props: SpinOptionsProps) {
                 {t('spin.roof')}
                 <HelpTooltip text={t('spin.roofTooltip')} />
               </label>
-              <div className="flex gap-1">
+              <div className="flex rounded-md border border-input overflow-hidden">
                 <button onClick={() => onRoofChange(true)}
-                  className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                  className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
                     ${roof ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                   {t('options.yes')}
                 </button>
                 <button onClick={() => onRoofChange(false)}
-                  className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                  className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
                     ${!roof ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                   {t('options.no')}
                 </button>
@@ -134,12 +144,12 @@ export default function SpinOptions(props: SpinOptionsProps) {
                 {t('spin.filter')}
                 <HelpTooltip text={t('spin.filterTooltip')} />
               </label>
-              <div className="flex gap-1">
+              <div className="flex rounded-md border border-input overflow-hidden">
                 {(['strict', 'ignore-t', 'none'] as const).map((val) => (
                   <button key={val} onClick={() => onFilterChange(val)}
-                    className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                    className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
                       ${filter === val ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
-                    {{ strict: 'Strict', 'ignore-t': 'Ignore T', none: 'None' }[val]}
+                    {val === 'strict' ? 'Strict' : val === 'ignore-t' ? 'Ignore T' : 'None'}
                   </button>
                 ))}
               </div>

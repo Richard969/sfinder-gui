@@ -154,7 +154,10 @@ const en = {
   },
   spin: {
     title: 'Spin',
-    desc: 'Find a single T-spin placement from the specified field.',
+    desc: 'Find T-spin placements from the specified field.',
+    fieldOptions: 'Field Setup',
+    spinDetection: 'Spin Detection',
+    advanced: 'Advanced',
     optionsLabel: 'Options',
     fillBottom: 'Fill Bottom',
     fillBottomHint: 'clear lines above (not included)',
@@ -363,7 +366,10 @@ const zh: typeof en = {
   },
   spin: {
     title: 'Spin',
-    desc: '从指定场地寻找一次 T-spin 放置。',
+    desc: '从指定场地寻找 T-spin 放置。',
+    fieldOptions: '场地设置',
+    spinDetection: '旋转检测',
+    advanced: '高级',
     optionsLabel: '选项',
     fillBottom: '填充底部',
     fillBottomHint: '仅消去此行以上的行 (不含)',

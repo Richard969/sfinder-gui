@@ -35,6 +35,11 @@ export default function SpinPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold">{t('spin.title')}</h2>
+        <p className="text-sm text-muted-foreground">{t('spin.desc')}</p>
+      </div>
+
       <FumenEditorEmbed visibleRows={page.rows} onVisibleRowsChange={(v) => update('spin', { rows: v })} />
       <PatternInput value={patterns} onChange={setPatterns} />
       <SpinOptions
