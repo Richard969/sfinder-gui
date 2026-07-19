@@ -81,36 +81,27 @@ export default function SpinOptions(props: SpinOptionsProps) {
           min={-1} hint={t('spin.fillTopHint')} tooltip={t('spin.fillTopTooltip')} />
         <NumInput label={t('spin.marginHeight')} value={marginHeight} onChange={onMarginHeightChange}
           min={-1} hint={t('spin.marginHeightHint')} tooltip={t('spin.marginHeightTooltip')} />
-      </div>
-
-      {/* Spin detection */}
-      <div className="space-y-3 pt-2">
-        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-          {t('spin.spinDetection')}
-        </div>
-        <div className="grid grid-cols-1 gap-3">
-          <div className="space-y-1">
-            <label className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-              {t('spin.line')}
-              <HelpTooltip text={t('spin.lineTooltip')} />
-            </label>
-            <div className="flex rounded-md border border-input overflow-hidden">
-              <button onClick={() => onLineChange(1)}
-                className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
-                  ${line === 1 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
-                TSS
-              </button>
-              <button onClick={() => onLineChange(2)}
-                className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
-                  ${line === 2 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
-                TSD
-              </button>
-              <button onClick={() => onLineChange(3)}
-                className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
-                  ${line === 3 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
-                TST
-              </button>
-            </div>
+        <div className="space-y-1">
+          <label className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            {t('spin.line')}
+            <HelpTooltip text={t('spin.lineTooltip')} />
+          </label>
+          <div className="flex rounded-md border border-input overflow-hidden">
+            <button onClick={() => onLineChange(1)}
+              className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
+                ${line === 1 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
+              TSS
+            </button>
+            <button onClick={() => onLineChange(2)}
+              className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
+                ${line === 2 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
+              TSD
+            </button>
+            <button onClick={() => onLineChange(3)}
+              className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors
+                ${line === 3 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
+              TST
+            </button>
           </div>
         </div>
       </div>
