@@ -541,10 +541,9 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
       rows.push(<div key={y} className="flex gap-px">{cells}</div>);
     }
     return (
-      <div className="flex flex-col items-center p-2 rounded-lg border border-border bg-card hover:bg-accent cursor-pointer transition-colors"
+      <div className="flex flex-col items-center p-2 rounded-md border border-border bg-card hover:bg-accent cursor-pointer transition-colors"
         onClick={() => handleView(fumen)}>
         <div className="flex flex-col gap-px bg-muted/30 p-1 rounded">{rows}</div>
-      </div>
     );
   };
 
@@ -606,7 +605,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
+    <div className="rounded-md border border-border bg-card overflow-hidden">
       <div className="flex border-b border-border bg-secondary/30 overflow-x-auto">
         {tabs.map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -638,7 +637,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         )}
         {!failed && activeTab === 'summary' && command === 'spin' && spinRows.length > 0 && (
           <div className="space-y-3">
-            <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+            <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
               <div className="text-3xl font-bold text-foreground">{spinRows.length}</div>
             </div>
@@ -648,7 +647,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
                 const colors = ['border-green-500/40 bg-green-500/5', 'border-blue-500/40 bg-blue-500/5', 'border-purple-500/40 bg-purple-500/5', 'border-cyan-500/40 bg-cyan-500/5', 'border-orange-500/40 bg-orange-500/5', 'border-pink-500/40 bg-pink-500/5'];
                 const label = cat.replace(/-(?=\[)/, ' ').replace(/\[(\w+)\]/, (_, w) => `[${w.toUpperCase()}]`).replace(/\b\w/g, (c) => c.toUpperCase());
                 return (
-                  <div key={cat} className={`rounded-lg border p-3 flex flex-col items-center gap-0.5 ${colors[i % colors.length]}`}>
+                  <div key={cat} className={`rounded-md border p-3 flex flex-col items-center gap-0.5 ${colors[i % colors.length]}`}>
                     <span className="text-[10px] font-medium opacity-70">{label}</span>
                     <span className="text-lg font-bold">{count}</span>
                   </div>
