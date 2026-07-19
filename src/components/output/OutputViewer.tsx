@@ -500,10 +500,11 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   const FumenThumbnail = ({ fumen }: { fumen: string }) => {
     const editorFumen = useFumenStore.getState().fumenString;
     const pages = useMemo(() => {
-    // Merge editor field (initial X blocks) + solution pages
+      try { return decoder.decode(fumen); } catch { return null; }
+    }, [fumen]);
+    if (!pages) return null;
     const merged: string[][] = [];
     for (let y = 0; y < 23; y++) merged[y] = Array(10).fill('_');
-    // Editor field first (background)
     if (editorFumen) {
       try {
         const ep = decoder.decode(editorFumen);
@@ -516,15 +517,12 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         }
       } catch {}
     }
-    // Solution pages on top
-    if (pages) {
-      for (const p of pages) {
-        for (let y = 0; y < 23; y++)
-          for (let x = 0; x < 10; x++) {
-            const cell = p.field.at(x, y);
-            if (cell !== '_') merged[y][x] = cell;
-          }
-      }
+    for (const p of pages) {
+      for (let y = 0; y < 23; y++)
+        for (let x = 0; x < 10; x++) {
+          const cell = p.field.at(x, y);
+          if (cell !== '_') merged[y][x] = cell;
+        }
     }
     let ctop = 22, cbtm = 0;
     for (let y = 0; y < 23; y++) {
