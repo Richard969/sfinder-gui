@@ -499,10 +499,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
 
   const FumenThumbnail = ({ fumen }: { fumen: string }) => {
     const editorFumen = useFumenStore.getState().fumenString;
-    let blocks = 0; try { const pag = decoder.decode(editorFumen); if (pag?.[0]) { for (let y=0;y<23;y++) for (let x=0;x<10;x++) if (pag[0].field.at(x,y)!=='_') blocks++; } } catch {} console.log('thumb editor blocks:', blocks);
     const pages = useMemo(() => {
-      try { return decoder.decode(fumen); } catch { return null; }
-    }, [fumen]);
     // Merge editor field (initial X blocks) + solution pages
     const merged: string[][] = [];
     for (let y = 0; y < 23; y++) merged[y] = Array(10).fill('_');
@@ -639,7 +636,6 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('spin.solutionCount')}</div>
               <div className="text-3xl font-bold text-foreground">{spinRows.length}</div>
             </div>
-            {spinRows.length > 50 && (
             <div className="grid grid-cols-3 gap-2">
               {Object.entries(spinCats).map(([cat, count], i) => {
                 if (count === 0) return null;
@@ -653,7 +649,6 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
                 );
               })}
             </div>
-            )}
             <div className="flex justify-center">
               <button onClick={() => {
                 const allPages: any[] = [];
