@@ -553,7 +553,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
       return q ? rows.filter((s) => (s.mark + ' ' + s.operations).toLowerCase().includes(q)) : rows;
     }, [rows, search]);
     if (rows.length === 0) return <p className="text-sm text-muted-foreground">{t('spin.noSpin')}</p>;
-    const perPage = 20;
+    const perPage = 49;
     const totalPages = Math.ceil(filtered.length / perPage);
     const page = Math.min(spinPage, totalPages - 1);
     const paged = filtered.slice(page * perPage, (page + 1) * perPage);
