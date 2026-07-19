@@ -544,6 +544,7 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
       <div className="flex flex-col items-center p-2 rounded-md border border-border bg-card hover:bg-accent cursor-pointer transition-colors"
         onClick={() => handleView(fumen)}>
         <div className="flex flex-col gap-px bg-muted/30 p-1 rounded">{rows}</div>
+      </div>
     );
   };
 
