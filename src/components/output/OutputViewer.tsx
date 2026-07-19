@@ -409,7 +409,9 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
   const pathRows = useMemo(() => {
     return (output.pathResults || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
   }, [output.pathResults]);
-  const pathTotalPatterns = output.pathTotalPatterns || pathRows.length || 1;
+  const strictMinimalRows = useMemo(() => {
+    return (output.strictMinimal || []).map((r) => ({ fumen: r.fumen, coverage: r.coverage, used: r.used }));
+  }, [output.strictMinimal]);
   const spinRows = useMemo(() => parseSpin(htmlOutput), [htmlOutput]);
   const spinCats = useMemo(() => { try { return getSpinCategoryCounts(htmlOutput); } catch { return {}; } }, [htmlOutput]);
   useEffect(() => { setSpinFilter('all'); setSpinPage(0); }, [htmlOutput]);
