@@ -40,7 +40,7 @@ const NumInput = ({ label, value, onChange, min, hint, tooltip }: {
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1">
-        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+        <label className="text-xs text-muted-foreground">{label}</label>
         {tooltip && <HelpTooltip text={tooltip} />}
         {hint && <span className="ml-auto text-[9px] text-muted-foreground/60">{hint}</span>}
       </div>
@@ -71,7 +71,7 @@ export default function SpinOptions(props: SpinOptionsProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-1.5">
-        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="text-xs text-muted-foreground">
           {t('spin.optionsLabel')}
         </div>
       </div>
@@ -84,25 +84,25 @@ export default function SpinOptions(props: SpinOptionsProps) {
           min={-1} hint={t('spin.marginHeightHint')} tooltip={t('spin.marginHeightTooltip')} />
         <div className="space-y-1">
           <div className="flex items-center gap-1">
-            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            <label className="text-xs text-muted-foreground">
               {t('spin.line')}
             </label>
             <HelpTooltip text={t('spin.lineTooltip')} />
           </div>
           <div className="flex gap-1">
             <button onClick={() => onLineChange(1)}
-              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                ${line === 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+              className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                ${line === 1 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
               ≥ TSS
             </button>
             <button onClick={() => onLineChange(2)}
-              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                ${line === 2 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+              className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                ${line === 2 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
               ≥ TSD
             </button>
             <button onClick={() => onLineChange(3)}
-              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                ${line === 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+              className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                ${line === 3 ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
               ≥ TST
             </button>
           </div>
@@ -115,20 +115,20 @@ export default function SpinOptions(props: SpinOptionsProps) {
               min={-1} hint={t('spin.maxRoofHint')} tooltip={t('spin.maxRoofTooltip')} />
             <div className="space-y-1">
               <div className="flex items-center gap-1">
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                <label className="text-xs text-muted-foreground">
                   {t('spin.roof')}
                 </label>
                 <HelpTooltip text={t('spin.roofTooltip')} />
               </div>
               <div className="flex gap-1">
                 <button onClick={() => onRoofChange(true)}
-                  className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                    ${roof ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                  className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                    ${roof ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                   {t('options.yes')}
                 </button>
                 <button onClick={() => onRoofChange(false)}
-                  className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                    ${!roof ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                  className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                    ${!roof ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                   {t('options.no')}
                 </button>
               </div>
@@ -137,7 +137,7 @@ export default function SpinOptions(props: SpinOptionsProps) {
           {filter !== undefined && onFilterChange && (
             <div className="space-y-1">
               <div className="flex items-center gap-1">
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                <label className="text-xs text-muted-foreground">
                   {t('spin.filter')}
                 </label>
                 <HelpTooltip text={t('spin.filterTooltip')} />
@@ -145,8 +145,8 @@ export default function SpinOptions(props: SpinOptionsProps) {
               <div className="flex gap-1">
                 {(['strict', 'ignore-t', 'none'] as const).map((val) => (
                   <button key={val} onClick={() => onFilterChange(val)}
-                    className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                      ${filter === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                    className={`flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors
+                      ${filter === val ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                     {{ strict: 'Strict', 'ignore-t': 'Ignore T', none: 'None' }[val]}
                   </button>
                 ))}

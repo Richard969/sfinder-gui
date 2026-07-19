@@ -723,7 +723,27 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
           <PathSummary total={unique.length + minimal.length} minimal={minimal.length} allFumen={allFumen} minFumen={minimalFumen} onView={handleView} t={t} />
         )}
         {!failed && activeTab === 'strict-minimal' && (
-          <CoverCsvSummary rows={strictMinimalRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setPathShowThumbs(false)}
+                className={`px-2 py-0.5 text-[10px] rounded font-medium ${!pathShowThumbs ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                Table
+              </button>
+              <button onClick={() => setPathShowThumbs(true)}
+                className={`px-2 py-0.5 text-[10px] rounded font-medium ${pathShowThumbs ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                Thumbnails
+              </button>
+            </div>
+            {pathShowThumbs ? (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 max-h-[500px] overflow-y-auto p-1">
+                {strictMinimalRows.map((r, i) => (
+                  r.fumen && <FumenThumbnail key={i} fumen={r.fumen} />
+                ))}
+              </div>
+            ) : (
+              <CoverCsvSummary rows={strictMinimalRows} onView={handleView} t={t} totalPatterns={pathTotalPatterns} />
+            )}
+          </div>
         )}
         {!failed && activeTab === 'solutions' && command === 'cover' && (
           <SolutionTable solutions={unique} label="unique" />
