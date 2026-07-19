@@ -574,10 +574,10 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 text-xs">
             <button onClick={() => setSpinPage(Math.max(0, page - 1))} disabled={page === 0}
-              className="px-2 py-1 rounded bg-secondary text-muted-foreground hover:bg-secondary/80 disabled:opacity-30">Prev</button>
+              className="px-2 py-1 rounded bg-background text-muted-foreground hover:bg-secondary disabled:opacity-30">Prev</button>
             <span className="text-muted-foreground">{page + 1} / {totalPages}</span>
             <button onClick={() => setSpinPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-              className="px-2 py-1 rounded bg-secondary text-muted-foreground hover:bg-secondary/80 disabled:opacity-30">Next</button>
+              className="px-2 py-1 rounded bg-background text-muted-foreground hover:bg-secondary disabled:opacity-30">Next</button>
           </div>
         )}
       </div>
@@ -683,12 +683,12 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
           <div className="space-y-2">
             <div className="flex gap-1 flex-wrap">
               <button onClick={() => setSpinFilter('all')}
-                className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${spinFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${spinFilter === 'all' ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                 All ({spinRows.length})
               </button>
               {Object.entries(spinCats).map(([cat, count]) => (
                 <button key={cat} onClick={() => setSpinFilter(cat)}
-                  className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${spinFilter === cat ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                  className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${spinFilter === cat ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                   {cat.replace(/-\w+(?=\[)/, '').replace(/\[(\w+)\]/, (_,w:string)=>`[${w.toUpperCase()}]`).replace(/\b\w/g,(c:string)=>c.toUpperCase())} ({count})
                 </button>
               ))}
@@ -700,11 +700,11 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <button onClick={() => setPathShowThumbs(false)}
-                className={`px-2 py-0.5 text-[10px] rounded font-medium ${!pathShowThumbs ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                className={`px-2 py-0.5 text-[10px] rounded font-medium ${!pathShowThumbs ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                 Table
               </button>
               <button onClick={() => setPathShowThumbs(true)}
-                className={`px-2 py-0.5 text-[10px] rounded font-medium ${pathShowThumbs ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                className={`px-2 py-0.5 text-[10px] rounded font-medium ${pathShowThumbs ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                 Thumbnails
               </button>
             </div>
@@ -726,11 +726,11 @@ export default function OutputViewer({ output, command, coverLogic }: OutputView
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <button onClick={() => setPathShowThumbs(false)}
-                className={`px-2 py-0.5 text-[10px] rounded font-medium ${!pathShowThumbs ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                className={`px-2 py-0.5 text-[10px] rounded font-medium ${!pathShowThumbs ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                 Table
               </button>
               <button onClick={() => setPathShowThumbs(true)}
-                className={`px-2 py-0.5 text-[10px] rounded font-medium ${pathShowThumbs ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                className={`px-2 py-0.5 text-[10px] rounded font-medium ${pathShowThumbs ? 'bg-primary/15 text-primary' : 'bg-background text-muted-foreground hover:bg-secondary'}`}>
                 Thumbnails
               </button>
             </div>
