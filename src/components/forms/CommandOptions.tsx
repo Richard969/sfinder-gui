@@ -41,7 +41,7 @@ export default function CommandOptions({
       <div className="grid grid-cols-2 gap-3">
         {/* Hold */}
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">{t('options.hold')}</label>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('options.hold')}</label>
           <select
             value={hold}
             onChange={(e) => onHoldChange(e.target.value as HoldOption)}
@@ -55,7 +55,7 @@ export default function CommandOptions({
 
         {/* Drop */}
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">{t('options.drop')}</label>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('options.drop')}</label>
           <select
             value={drop}
             onChange={(e) => onDropChange(e.target.value as DropType)}
@@ -72,7 +72,7 @@ export default function CommandOptions({
 
         {/* Kicks */}
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">{t('options.kicksFile')}</label>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('options.kicksFile')}</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -104,7 +104,7 @@ export default function CommandOptions({
         {/* Split (Path command) */}
         {onSplitChange && (
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               {t('options.split')} <span className="text-[10px] opacity-50">({t('options.splitDesc')})</span>
             </label>
             <select

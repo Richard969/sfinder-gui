@@ -54,8 +54,8 @@ const NumInput = ({ label, value, onChange, min, hint, tooltip }: {
           const n = parseFloat(raw);
           if (!isNaN(n)) onChange(n);
         }}
-        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm
-          focus:outline-none focus:ring-1 focus:ring-ring
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 font-mono text-sm
+          placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring
           [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
     </div>

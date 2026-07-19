@@ -203,7 +203,7 @@ export default function CoverPage() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">{t('cover.mode')}</label>
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('cover.mode')}</label>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value)}
@@ -227,7 +227,7 @@ export default function CoverPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">{t('cover.coverLogic')}</label>
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('cover.coverLogic')}</label>
             <div className="flex rounded-md border border-input overflow-hidden">
               <button
                 onClick={() => setCoverLogic('or')}
