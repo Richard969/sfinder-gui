@@ -40,7 +40,7 @@ const NumInput = ({ label, value, onChange, min, hint, tooltip }: {
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1">
-        <label className="text-xs text-muted-foreground">{label}</label>
+        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
         {tooltip && <HelpTooltip text={tooltip} />}
         {hint && <span className="ml-auto text-[9px] text-muted-foreground/60">{hint}</span>}
       </div>
@@ -55,7 +55,7 @@ const NumInput = ({ label, value, onChange, min, hint, tooltip }: {
           if (!isNaN(n)) onChange(n);
         }}
         className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm
-          focus:outline-none focus:ring-1 focus:ring-ring
+          placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring
           [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
     </div>
@@ -71,7 +71,7 @@ export default function SpinOptions(props: SpinOptionsProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-1.5">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
           {t('spin.optionsLabel')}
         </div>
       </div>
@@ -84,7 +84,7 @@ export default function SpinOptions(props: SpinOptionsProps) {
           min={-1} hint={t('spin.marginHeightHint')} tooltip={t('spin.marginHeightTooltip')} />
         <div className="space-y-1">
           <div className="flex items-center gap-1">
-            <label className="text-xs text-muted-foreground">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               {t('spin.line')}
             </label>
             <HelpTooltip text={t('spin.lineTooltip')} />
@@ -115,7 +115,7 @@ export default function SpinOptions(props: SpinOptionsProps) {
               min={-1} hint={t('spin.maxRoofHint')} tooltip={t('spin.maxRoofTooltip')} />
             <div className="space-y-1">
               <div className="flex items-center gap-1">
-                <label className="text-xs text-muted-foreground">
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                   {t('spin.roof')}
                 </label>
                 <HelpTooltip text={t('spin.roofTooltip')} />
@@ -137,7 +137,7 @@ export default function SpinOptions(props: SpinOptionsProps) {
           {filter !== undefined && onFilterChange && (
             <div className="space-y-1">
               <div className="flex items-center gap-1">
-                <label className="text-xs text-muted-foreground">
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                   {t('spin.filter')}
                 </label>
                 <HelpTooltip text={t('spin.filterTooltip')} />
